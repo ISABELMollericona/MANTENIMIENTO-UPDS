@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar usuario{% else %}Nuevo usuario{% endif %} | UPDS{% endblock %}
+{% block content %}
+<div class="content-narrow"><p class="text-uppercase small fw-semibold text-danger mb-1">Administración</p><h1 class="h3 mb-4">{% if object %}Editar usuario{% else %}Crear usuario{% endif %}</h1>
+  <form method="post" class="form-panel">{% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}
+      {% if field.name != "grupos" %}<div class="mb-3">{% if field.field.widget.input_type == "checkbox" %}<div class="form-check">{{ field }}<label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>{% else %}<label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}{% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>{% endif %}
+    {% endfor %}
+    <fieldset class="mb-4"><legend class="h6">Roles asignados</legend><div class="row row-cols-1 row-cols-sm-2 g-2">{% for checkbox in form.grupos %}<div class="col"><div class="form-check">{{ checkbox.tag }}<label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label></div></div>{% empty %}<p class="text-secondary">Primero crea roles para poder asignarlos.</p>{% endfor %}</div>{% for error in form.grupos.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</fieldset>
+    <div class="d-flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">Guardar usuario</button><a class="btn btn-outline-secondary" href="{% url 'cuentas:usuarios' %}">Cancelar</a></div>
+  </form>
+</div>
+{% endblock %}

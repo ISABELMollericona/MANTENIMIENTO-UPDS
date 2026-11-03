@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Usuarios | UPDS{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+  <div><p class="text-uppercase small fw-semibold text-danger mb-1">Administración</p><h1 class="h3 mb-0">Usuarios</h1></div>
+  {% if perms.cuentas.crear_usuarios and perms.cuentas.gestionar_usuarios or user.is_superuser %}<a class="btn btn-primary" href="{% url 'cuentas:usuario_crear' %}"><i class="bi bi-person-plus me-2" aria-hidden="true"></i>Nuevo usuario</a>{% endif %}
+</div>
+<form method="get" class="row g-2 align-items-end mb-3">
+  <div class="col-12 col-md-7"><label class="form-label" for="search-users">Buscar</label><input id="search-users" class="form-control" type="search" name="q" value="{{ request.GET.q }}" placeholder="Usuario, nombre o correo"></div>
+  <div class="col-8 col-md-3"><label class="form-label" for="user-status">Estado</label><select class="form-select" id="user-status" name="estado"><option value="">Todos</option><option value="activo" {% if request.GET.estado == 'activo' %}selected{% endif %}>Activos</option><option value="inactivo" {% if request.GET.estado == 'inactivo' %}selected{% endif %}>Inactivos</option></select></div>
+  <div class="col-4 col-md-2 d-grid"><button class="btn btn-outline-primary" type="submit"><i class="bi bi-search me-1" aria-hidden="true"></i>Filtrar</button></div>
+</form>
+<div class="table-responsive bg-white border rounded-1">
+  <table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Roles</th><th>Estado</th><th><span class="visually-hidden">Acciones</span></th></tr></thead><tbody>
+    {% for usuario in usuarios %}<tr><td class="fw-semibold">{{ usuario.username }}</td><td>{{ usuario.get_full_name|default:"—" }}</td><td>{{ usuario.email|default:"—" }}</td><td>{% for grupo in usuario.groups.all %}<span class="badge text-bg-light border me-1">{{ grupo.name }}</span>{% empty %}<span class="text-secondary">Sin roles</span>{% endfor %}</td><td>{% if usuario.is_active %}<span class="badge text-bg-success">Activo</span>{% else %}<span class="badge text-bg-secondary">Inactivo</span>{% endif %}</td><td class="text-end">{% if perms.cuentas.editar_usuarios and perms.cuentas.gestionar_usuarios or user.is_superuser %}<a class="btn btn-sm btn-outline-primary" href="{% url 'cuentas:usuario_editar' usuario.pk %}" aria-label="Editar {{ usuario.username }}" title="Editar usuario"><i class="bi bi-pencil" aria-hidden="true"></i></a>{% endif %}</td></tr>
+    {% empty %}<tr><td class="text-center text-secondary py-4" colspan="6">No hay usuarios que coincidan con la búsqueda.</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% include "cuentas/paginacion.html" %}
+{% endblock %}

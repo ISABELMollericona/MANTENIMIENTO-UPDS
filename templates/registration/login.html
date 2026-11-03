@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión | UPDS{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-4 py-md-5"><div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+  <div class="login-panel p-4 p-md-5">
+    <p class="text-uppercase small fw-semibold text-danger mb-1">UPDS Cochabamba</p><h1 class="h3 mb-4">Iniciar sesión</h1>
+    <form method="post" novalidate>{% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+      <div class="mb-3"><label class="form-label" for="id_username">Usuario</label><input class="form-control" id="id_username" name="username" type="text" autocomplete="username" required autofocus>{% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <div class="mb-4"><label class="form-label" for="id_password">Contraseña</label><input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required>{% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+      <input type="hidden" name="next" value="{{ next }}"><button class="btn btn-primary w-100" type="submit">Ingresar</button>
+    </form>
+    <a class="d-inline-block mt-3 small" href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+  </div>
+</div></div>
+{% endblock %}

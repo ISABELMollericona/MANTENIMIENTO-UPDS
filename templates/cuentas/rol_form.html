@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar rol{% else %}Nuevo rol{% endif %} | UPDS{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><p class="text-uppercase small fw-semibold text-danger mb-1">Administración</p><h1 class="h3 mb-0">{% if object %}Editar rol{% else %}Crear rol{% endif %}</h1></div><a class="btn btn-outline-secondary" href="{% url 'cuentas:roles' %}"><i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Volver a roles</a></div>
+<form method="post">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+  <section class="form-panel mb-4"><div class="row g-3">{% for field in form %}{% if field.name != "permisos" %}<div class="col-12 {% if field.name == 'descripcion' %}col-lg-8{% else %}col-lg-4{% endif %}"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>{% endif %}{% endfor %}</div>{% if object.protegido %}<p class="small text-secondary mt-3 mb-0">El rol Administrador y todos sus permisos están protegidos.</p>{% endif %}</section>
+  <section class="mb-4" aria-labelledby="matrix-title"><div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-2"><div><h2 id="matrix-title" class="h5 mb-1">Permisos por módulo</h2><p class="small text-secondary mb-0">Selecciona solo las acciones que este rol podrá ejecutar.</p></div><button class="btn btn-sm btn-outline-secondary" type="button" id="toggle-permissions">Marcar todos</button></div>
+    <div class="table-responsive bg-white border rounded-1"><table class="table table-sm table-hover align-middle mb-0"><thead class="table-light"><tr><th>Módulo</th><th>Acciones disponibles</th></tr></thead><tbody>
+      {% for modulo in matriz_permisos %}<tr><th scope="row" class="text-nowrap">{{ modulo.titulo }}</th><td><div class="d-flex flex-wrap gap-3">{% for accion in modulo.acciones %}<label class="form-check form-check-inline mb-0"><input class="form-check-input permission-checkbox" type="checkbox" name="permisos" value="{{ accion.permiso.pk }}" {% if accion.seleccionado %}checked{% endif %} {% if form.permisos.field.disabled %}disabled{% endif %}><span class="form-check-label">{{ accion.etiqueta }}</span></label>{% endfor %}</div></td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="mb-4" aria-labelledby="special-permissions-title"><h2 id="special-permissions-title" class="h5 mb-2">Permisos especiales</h2><div class="row row-cols-1 row-cols-md-2 g-2">{% for accion in permisos_especiales %}<div class="col"><label class="form-check border rounded-1 bg-white p-3"><input class="form-check-input permission-checkbox" type="checkbox" name="permisos" value="{{ accion.permiso.pk }}" {% if accion.seleccionado %}checked{% endif %} {% if form.permisos.field.disabled %}disabled{% endif %}><span class="form-check-label ms-2">{{ accion.etiqueta }}</span></label></div>{% endfor %}</div>{% for error in form.permisos.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</section>
+  <div class="d-flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">Guardar rol y permisos</button><a class="btn btn-outline-secondary" href="{% url 'cuentas:roles' %}">Cancelar</a></div>
+</form>
+{% endblock %}
+{% block extra_js %}<script>
+  const permissionCheckboxes = [...document.querySelectorAll('.permission-checkbox:not(:disabled)')];
+  const toggleButton = document.getElementById('toggle-permissions');
+  if (toggleButton) toggleButton.addEventListener('click', () => {
+    const shouldCheck = permissionCheckboxes.some((checkbox) => !checkbox.checked);
+    permissionCheckboxes.forEach((checkbox) => { checkbox.checked = shouldCheck; });
+    toggleButton.textContent = shouldCheck ? 'Desmarcar todos' : 'Marcar todos';
+  });
+</script>{% endblock %}
