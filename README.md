@@ -17,6 +17,7 @@ Copy-Item .env.example .env
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py seed_roles
+python manage.py seed_demo
 python manage.py runserver
 ```
 
@@ -27,11 +28,21 @@ Configura `SECRET_KEY`, `DEBUG` y `ALLOWED_HOSTS` en `.env`. Para Neon, agrega l
 - `python manage.py test`: ejecutar pruebas.
 - `python manage.py createsuperuser`: crear la primera cuenta administradora.
 - `python manage.py seed_roles`: crear roles iniciales, asignar el rol Administrador a superusuarios y poder editarlos luego desde la interfaz.
-- `python manage.py seed_demo`: cargar datos ficticios (planificado para Sprint 3).
+- `python manage.py seed_demo`: cargar datos ficticios idempotentes (8 ambientes, 5 categorías, 40 equipos, 25 solicitudes, intervenciones, planes y programaciones).
 
 ## Cuentas y roles
 
 Los roles usan los modelos nativos `Group` y `Permission` de Django. Crea el usuario inicial con `createsuperuser`, ejecuta `seed_roles` y accede a **Roles y permisos** para administrar la matriz. La recuperación de contraseña imprime el enlace en la consola cuando `DEBUG=True`.
+
+`seed_demo` crea estas cuentas para pruebas locales, todas con `Demo-UPDS-2026!` por defecto y cambio obligatorio de contraseña al primer acceso:
+
+- `admin.demo`
+- `responsable.demo`
+- `tecnico.demo`
+- `docente.demo`
+- `autoridad.demo`
+
+Puedes cambiar la contraseña compartida estableciendo `DEMO_PASSWORD` antes de ejecutar el comando. Estas cuentas y claves son solo para desarrollo; no las uses en producción.
 
 ## Despliegue
 

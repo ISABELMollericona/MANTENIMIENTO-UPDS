@@ -197,3 +197,44 @@ class VistasRolesTests(CuentasBaseTestCase):
         self.client.logout()
         self.client.force_login(tecnico)
         self.assertEqual(self.client.get(url).status_code, 200)
+
+
+class SeedDemoCommandTests(TestCase):
+    def test_seed_demo_es_idempotente_y_crea_volumen_solicitado(self):
+        import os
+
+        from django.contrib.auth import get_user_model
+        from django.core.management import call_command
+        from django.utils import timezone
+
+        from apps.cuentas.management.commands.seed_demo import AMBIENTES
+        from apps.equipos.models import Equipo
+        from apps.intervenciones.models import Intervencion, RepuestoUsado
+        from apps.preventivo.models import MantenimientoProgramado, PlanPreventivo
+        from apps.solicitudes.models import Solicitud
+        from apps.ubicaciones.models import Ambiente
+
+        call_command("seed_demo", verbosity=0)
+        password = os.getenv("DEMO_PASSWORD", "Demo-UPDS-2026!")
+        administrador = get_user_model().objects.get(username="admin.demo")
+        self.assertTrue(administrador.is_superuser)
+        self.assertTrue(administrador.check_password(password))
+        self.assertTrue(administrador.force_password_change)
+        self.assertEqual(Ambiente.objects.filter(nombre__in=[nombre for nombre, _, _ in AMBIENTES]).count(), 8)
+        self.assertEqual(Equipo.objects.filter(codigo__startswith="DEMO-").count(), 40)
+        self.assertEqual(Solicitud.objects.filter(descripcion__startswith="Solicitud ficticia").count(), 25)
+        self.assertGreater(Intervencion.objects.count(), 0)
+        self.assertGreater(RepuestoUsado.objects.count(), 0)
+        self.assertGreater(PlanPreventivo.objects.count(), 0)
+        self.assertTrue(MantenimientoProgramado.objects.filter(fecha_programada__lt=timezone.localdate(), estado="pendiente").exists())
+
+        conteos_antes = (
+            Ambiente.objects.count(), Equipo.objects.count(), Solicitud.objects.count(),
+            Intervencion.objects.count(), MantenimientoProgramado.objects.count(),
+        )
+        call_command("seed_demo", verbosity=0)
+        conteos_despues = (
+            Ambiente.objects.count(), Equipo.objects.count(), Solicitud.objects.count(),
+            Intervencion.objects.count(), MantenimientoProgramado.objects.count(),
+        )
+        self.assertEqual(conteos_despues, conteos_antes)
