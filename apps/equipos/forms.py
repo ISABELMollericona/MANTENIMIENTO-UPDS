@@ -1,4 +1,5 @@
 from django import forms
+from typing import cast
 
 from apps.cuentas.models import Usuario
 from apps.ubicaciones.models import Ambiente
@@ -39,17 +40,22 @@ class EquipoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["categoria"].queryset = CategoriaEquipo.objects.filter(activo=True).order_by("nombre")
-        self.fields["ambiente"].queryset = Ambiente.objects.filter(activo=True).order_by("bloque", "nombre")
-        self.fields["responsable"].queryset = Usuario.objects.filter(is_active=True).order_by("last_name", "first_name", "username")
+        categoria = cast(forms.ModelChoiceField, self.fields["categoria"])
+        ambiente = cast(forms.ModelChoiceField, self.fields["ambiente"])
+        responsable = cast(forms.ModelChoiceField, self.fields["responsable"])
+        estado = cast(forms.ChoiceField, self.fields["estado"])
+        categoria.queryset = CategoriaEquipo.objects.filter(activo=True).order_by("nombre")
+        ambiente.queryset = Ambiente.objects.filter(activo=True).order_by("bloque", "nombre")
+        responsable.queryset = Usuario.objects.filter(is_active=True).order_by("last_name", "first_name", "username")
         if self.instance.estado == Equipo.Estado.DADO_DE_BAJA:
-            self.fields["estado"].choices = [(Equipo.Estado.DADO_DE_BAJA, Equipo.Estado.DADO_DE_BAJA.label)]
-            self.fields["estado"].disabled = True
+            estado.choices = [(Equipo.Estado.DADO_DE_BAJA, Equipo.Estado.DADO_DE_BAJA.label)]
+            estado.disabled = True
         else:
-            self.fields["estado"].choices = [choice for choice in Equipo.Estado.choices if choice[0] != Equipo.Estado.DADO_DE_BAJA]
-        for campo in ("ambiente", "responsable"):
-            self.fields[campo].required = False
-            self.fields[campo].empty_label = "Sin asignar"
+            estado.choices = [choice for choice in Equipo.Estado.choices if choice[0] != Equipo.Estado.DADO_DE_BAJA]
+        ambiente.required = False
+        ambiente.empty_label = "Sin asignar"
+        responsable.required = False
+        responsable.empty_label = "Sin asignar"
 
     def clean_costo_compra(self):
         costo = self.cleaned_data.get("costo_compra")
