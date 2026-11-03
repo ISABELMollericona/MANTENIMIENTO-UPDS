@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.cuentas.apps.CuentasConfig",
     "apps.ubicaciones.apps.UbicacionesConfig",
     "apps.equipos.apps.EquiposConfig",
+    "apps.solicitudes.apps.SolicitudesConfig",
 ]
 
 MIDDLEWARE = [

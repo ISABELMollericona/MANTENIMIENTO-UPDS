@@ -17,7 +17,7 @@ ROLES_INICIALES = {
             "ver_dashboard", "ver_ambientes", "crear_ambientes", "editar_ambientes", "dar_baja_ambientes",
             "ver_equipos", "crear_equipos", "editar_equipos", "dar_baja_equipos", "exportar_equipos", "autorizar_baja_equipo",
             "ver_solicitudes", "crear_solicitudes", "editar_solicitudes", "cancelar_solicitudes", "ver_todas_solicitudes",
-            "asignar_tecnico", "cambiar_estado_solicitud", "ver_intervenciones", "ver_preventivos", "crear_preventivos",
+            "asignar_tecnico", "cambiar_estado_solicitud", "reabrir_solicitud", "ver_intervenciones", "ver_preventivos", "crear_preventivos",
             "editar_preventivos", "ver_reportes", "exportar_reportes",
         ],
     },

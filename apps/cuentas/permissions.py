@@ -41,6 +41,7 @@ PERMISOS_ESPECIALES = [
     ("gestionar_roles", "Gestionar roles y permisos"),
     ("asignar_tecnico", "Asignar técnicos a solicitudes"),
     ("cambiar_estado_solicitud", "Cambiar el estado de solicitudes asignadas"),
+    ("reabrir_solicitud", "Reabrir solicitudes resueltas o canceladas"),
     ("autorizar_baja_equipo", "Autorizar la baja de equipos"),
     ("ver_todas_solicitudes", "Ver todas las solicitudes, no solo las propias"),
 ]

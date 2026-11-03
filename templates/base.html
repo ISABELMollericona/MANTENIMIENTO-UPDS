@@ -20,6 +20,7 @@
           {% if user.is_authenticated %}
             {% if perms.cuentas.ver_ambientes %}<li class="nav-item"><a class="nav-link" href="{% url 'ubicaciones:lista' %}">Ambientes</a></li>{% endif %}
             {% if perms.cuentas.ver_equipos %}<li class="nav-item"><a class="nav-link" href="{% url 'equipos:lista' %}">Equipos</a></li>{% endif %}
+            {% if perms.cuentas.ver_solicitudes %}<li class="nav-item"><a class="nav-link" href="{% url 'solicitudes:lista' %}">Solicitudes</a></li>{% endif %}
             {% if perms.cuentas.ver_usuarios or user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'cuentas:usuarios' %}">Usuarios</a></li>{% endif %}
             {% if perms.cuentas.ver_roles or user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'cuentas:roles' %}">Roles y permisos</a></li>{% endif %}
           {% endif %}

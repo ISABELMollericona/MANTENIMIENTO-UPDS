@@ -101,6 +101,7 @@ class CatalogoPermiso(models.Model):
             ("gestionar_roles", "Gestionar roles y permisos"),
             ("asignar_tecnico", "Asignar técnicos a solicitudes"),
             ("cambiar_estado_solicitud", "Cambiar estado de solicitudes asignadas"),
+            ("reabrir_solicitud", "Reabrir solicitudes resueltas o canceladas"),
             ("autorizar_baja_equipo", "Autorizar la baja de equipos"),
             ("ver_todas_solicitudes", "Ver todas las solicitudes"),
         ]

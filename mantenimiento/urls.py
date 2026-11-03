@@ -10,6 +10,7 @@ urlpatterns = [
     path("cuentas/", include("apps.cuentas.urls")),
     path("ambientes/", include("apps.ubicaciones.urls")),
     path("equipos/", include("apps.equipos.urls")),
+    path("solicitudes/", include("apps.solicitudes.urls")),
     path("", TemplateView.as_view(template_name="panel/inicio.html"), name="panel"),
     path("cuentas/ingresar/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
     path("cuentas/salir/", auth_views.LogoutView.as_view(), name="logout"),
