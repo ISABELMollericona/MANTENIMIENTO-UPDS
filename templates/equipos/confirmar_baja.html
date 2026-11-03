@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Dar de baja equipo | UPDS{% endblock %}
+{% block content %}<div class="content-narrow"><div class="form-panel"><h1 class="h4 mb-3">Dar de baja «{{ equipo.codigo }}»</h1><p>El equipo pasará a estado “Dado de baja”. Su ficha, solicitudes e historial se conservarán.</p><form method="post" class="d-flex gap-2">{% csrf_token %}<button class="btn btn-danger" type="submit">Confirmar baja</button><a class="btn btn-outline-secondary" href="{% url 'equipos:ficha' equipo.pk %}">Cancelar</a></form></div></div>{% endblock %}

@@ -19,6 +19,7 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           {% if user.is_authenticated %}
             {% if perms.cuentas.ver_ambientes %}<li class="nav-item"><a class="nav-link" href="{% url 'ubicaciones:lista' %}">Ambientes</a></li>{% endif %}
+            {% if perms.cuentas.ver_equipos %}<li class="nav-item"><a class="nav-link" href="{% url 'equipos:lista' %}">Equipos</a></li>{% endif %}
             {% if perms.cuentas.ver_usuarios or user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'cuentas:usuarios' %}">Usuarios</a></li>{% endif %}
             {% if perms.cuentas.ver_roles or user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'cuentas:roles' %}">Roles y permisos</a></li>{% endif %}
           {% endif %}
