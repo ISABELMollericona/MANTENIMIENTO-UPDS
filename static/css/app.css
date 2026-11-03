@@ -4,6 +4,7 @@
   --surface: #f4f6f8;
 }
 
+html, body { max-width: 100%; overflow-x: clip; }
 body { background: var(--surface); color: #202a35; min-height: 100vh; }
 .bg-upds { background-color: var(--upds-blue); }
 .btn-primary { --bs-btn-bg: var(--upds-blue); --bs-btn-border-color: var(--upds-blue); --bs-btn-hover-bg: #002d5d; --bs-btn-hover-border-color: #002d5d; --bs-btn-active-bg: #00264f; }
