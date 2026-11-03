@@ -1,9 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
-from django.views.generic import TemplateView
-
 from apps.cuentas.auth_views import CambioContrasenaView, RestablecerContrasenaConfirmView
+from apps.panel.views import PanelInicioView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -13,7 +12,7 @@ urlpatterns = [
     path("solicitudes/", include("apps.solicitudes.urls")),
     path("intervenciones/", include("apps.intervenciones.urls")),
     path("preventivo/", include("apps.preventivo.urls")),
-    path("", TemplateView.as_view(template_name="panel/inicio.html"), name="panel"),
+    path("", PanelInicioView.as_view(), name="panel"),
     path("cuentas/ingresar/", auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
     path("cuentas/salir/", auth_views.LogoutView.as_view(), name="logout"),
     path("cuentas/contrasena/", CambioContrasenaView.as_view(template_name="registration/password_change_form.html"), name="password_change"),
