@@ -8,3 +8,4 @@
 - Las solicitudes avanzan por registrada → asignada → en reparación → resuelta; se pueden cancelar desde estados abiertos indicando motivo y reabrir una resuelta o cancelada con el permiso dinámico separado `reabrir_solicitud`.
 - El costo de cada intervención se calcula como mano de obra más la suma de cantidad × costo unitario de cada repuesto; todos los montos se registran en bolivianos y no afectan inventario físico.
 - Las periodicidades preventivas se suman como meses calendario y ajustan al último día del mes cuando la fecha no existe (por ejemplo, 31 de enero → 28/29 de febrero); el vencimiento se deriva de estado pendiente y fecha programada anterior al día actual.
+- El indicador reparar/reemplazar usa como umbral inicial el 50 % del costo de compra (`REPAIR_REPLACE_THRESHOLD=0.5`); es una sugerencia informativa y se puede ajustar por entorno.

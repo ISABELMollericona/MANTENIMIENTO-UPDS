@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "apps.intervenciones.apps.IntervencionesConfig",
     "apps.preventivo.apps.PreventivoConfig",
     "apps.panel.apps.PanelConfig",
+    "apps.reportes.apps.ReportesConfig",
 ]
 
 MIDDLEWARE = [
