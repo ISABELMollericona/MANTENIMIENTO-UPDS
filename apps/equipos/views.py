@@ -86,6 +86,20 @@ class FichaEquipoView(AccesoEquipos, DetailView):
     def get_queryset(self):
         return Equipo.objects.select_related("categoria", "ambiente", "responsable").prefetch_related("historial__usuario")
 
+    def get_context_data(self, **kwargs):
+        from django.db.models import F, Sum
+
+        from apps.intervenciones.models import Intervencion, RepuestoUsado
+        from apps.solicitudes.models import Solicitud
+
+        context = super().get_context_data(**kwargs)
+        intervenciones = Intervencion.objects.filter(solicitud__equipo=self.object)
+        mano_obra = intervenciones.aggregate(total=Sum("costo_mano_obra"))["total"]
+        repuestos = RepuestoUsado.objects.filter(intervencion__solicitud__equipo=self.object).aggregate(total=Sum(F("cantidad") * F("costo_unitario")))["total"]
+        context["costo_acumulado"] = (mano_obra or 0) + (repuestos or 0)
+        context["cantidad_fallas"] = Solicitud.objects.filter(equipo=self.object).count()
+        return context
+
 
 class BajaEquipoView(AccesoEquipos, View):
     permission_required = ("cuentas.dar_baja_equipos", "cuentas.autorizar_baja_equipo")

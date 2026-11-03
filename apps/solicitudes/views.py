@@ -30,7 +30,7 @@ class ListaSolicitudesView(AccesoSolicitudes, ListView):
     def get_queryset(self):
         queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "solicitante", "tecnico_asignado")
         if not (self.request.user.is_superuser or self.request.user.has_perm("cuentas.ver_todas_solicitudes")):
-            queryset = queryset.filter(solicitante=self.request.user)
+            queryset = queryset.filter(Q(solicitante=self.request.user) | Q(tecnico_asignado=self.request.user))
         for campo in ("estado", "prioridad"):
             valor = self.request.GET.get(campo, "")
             if valor:
@@ -99,7 +99,7 @@ class DetalleSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     def get_queryset(self):
         queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "solicitante", "tecnico_asignado").prefetch_related("historial__usuario")
         if not (self.request.user.is_superuser or self.request.user.has_perm("cuentas.ver_todas_solicitudes")):
-            queryset = queryset.filter(solicitante=self.request.user)
+            queryset = queryset.filter(Q(solicitante=self.request.user) | Q(tecnico_asignado=self.request.user))
         return queryset
 
     def get_context_data(self, **kwargs):
