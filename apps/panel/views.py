@@ -27,10 +27,10 @@ class PanelInicioView(TemplateView):
         if not puede_ver:
             return context
 
-        equipos = Equipo.objects.values("estado").annotate(total=Count("pk"))
+        conteos = dict(Equipo.objects.values_list("estado").annotate(total=Count("pk")))
         context["equipos_por_estado"] = [
-            {"estado": Equipo.Estado(item["estado"]).label, "valor": item["total"]}
-            for item in equipos
+            {"clave": estado.value, "estado": estado.label, "valor": conteos.get(estado.value, 0)}
+            for estado in Equipo.Estado
         ]
         context["total_equipos"] = sum(item["valor"] for item in context["equipos_por_estado"])
 

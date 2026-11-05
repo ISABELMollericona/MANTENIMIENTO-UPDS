@@ -1,0 +1,113 @@
+/* ===================== Mejora visual general ===================== */
+:root {
+  --radius: .65rem;
+  --shadow-sm: 0 1px 2px rgb(16 40 66 / 6%), 0 2px 8px rgb(16 40 66 / 5%);
+  --shadow-md: 0 4px 16px rgb(16 40 66 / 10%);
+  --ok: #198754; --ok-soft: #e3f4ea; --ok-ink: #11633d;
+  --warn: #e0a800; --warn-soft: #fff4d1; --warn-ink: #7a5b00;
+  --bad: #c8102e; --bad-soft: #fde6ea; --bad-ink: #9b0c23;
+  --off: #6c757d; --off-soft: #eceff2; --off-ink: #4a535b;
+  --info-soft: #e6eff8;
+}
+
+main h1 { font-weight: 600; letter-spacing: -.01em; }
+main h1.h3 { font-weight: 600; }
+
+/* Encabezado de página */
+.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.5rem; }
+.page-kicker { margin: 0 0 .2rem; color: var(--upds-red); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.page-header h1 { margin: 0 0 .2rem; }
+.page-subtitle { margin: 0; color: var(--muted); }
+
+/* Bienvenida */
+.welcome-banner { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; padding: 1.1rem 1.35rem; border-radius: var(--radius); background: linear-gradient(120deg, var(--upds-blue) 0%, #0a63ad 100%); color: #fff; box-shadow: var(--shadow-md); }
+.welcome-banner h2 { margin: 0; color: #fff; font-size: 1.2rem; font-weight: 600; }
+.welcome-banner p { margin: .15rem 0 0; color: rgb(255 255 255 / 80%); font-size: .86rem; }
+.welcome-avatar { display: grid; place-items: center; flex: 0 0 auto; width: 48px; height: 48px; border-radius: 50%; background: rgb(255 255 255 / 16%); font-size: 1.4rem; }
+
+/* Títulos de sección */
+.section-title { display: flex; align-items: center; gap: .5rem; margin: 0 0 .8rem; color: #23384d; font-size: .95rem; font-weight: 700; }
+.section-title i { color: var(--upds-blue); }
+.section-count { margin-left: .25rem; padding: .15rem .55rem; border-radius: 999px; background: var(--info-soft); color: var(--upds-blue); font-size: .74rem; font-weight: 600; }
+
+/* Indicadores */
+.kpi-card { position: relative; display: flex; align-items: center; gap: .95rem; height: 100%; padding: 1rem 1.1rem; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow-sm); transition: transform .15s ease, box-shadow .15s ease; }
+.kpi-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--kpi-color, var(--upds-blue)); }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-icon { display: grid; place-items: center; flex: 0 0 auto; width: 46px; height: 46px; border-radius: .6rem; background: var(--kpi-soft, var(--info-soft)); color: var(--kpi-color, var(--upds-blue)); font-size: 1.3rem; }
+.kpi-label { display: block; color: var(--muted); font-size: .8rem; font-weight: 600; }
+.kpi-value { display: block; color: var(--ink); font-size: 1.75rem; font-weight: 700; line-height: 1.15; }
+.kpi-detail { display: block; margin-top: .1rem; color: var(--muted); font-size: .76rem; }
+.kpi-operativo { --kpi-color: var(--ok); --kpi-soft: var(--ok-soft); }
+.kpi-en_mantenimiento { --kpi-color: var(--warn); --kpi-soft: var(--warn-soft); }
+.kpi-fuera_de_servicio { --kpi-color: var(--bad); --kpi-soft: var(--bad-soft); }
+.kpi-dado_de_baja { --kpi-color: var(--off); --kpi-soft: var(--off-soft); }
+.kpi-fuera_de_servicio .kpi-value { color: var(--bad-ink); }
+
+/* Tarjetas de panel */
+.panel-card { border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow-sm); overflow: hidden; }
+.panel-card-header { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .85rem 1.1rem; border-bottom: 1px solid var(--line); }
+.panel-card-header h2 { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: .95rem; font-weight: 700; }
+.panel-card-header h2 i { color: var(--upds-blue); }
+.panel-card-header a { font-size: .84rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.panel-card-header a:hover { text-decoration: underline; }
+.panel-card-body { padding: 1.1rem; }
+.panel-card .chart-frame { height: 17rem; }
+.table-responsive.table-flush { border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+.empty-state { padding: 1.6rem 1rem !important; color: var(--muted); text-align: center; }
+.empty-state i { display: block; margin-bottom: .35rem; color: #a4b2c0; font-size: 1.6rem; }
+
+/* Etiquetas de estado y prioridad */
+.pill { display: inline-flex; align-items: center; gap: .35rem; padding: .22rem .65rem; border-radius: 999px; font-size: .76rem; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: currentColor; }
+.pill-prioridad-alta, .pill-estado-registrada { background: var(--bad-soft); color: var(--bad-ink); }
+.pill-prioridad-media, .pill-estado-en_reparacion { background: var(--warn-soft); color: var(--warn-ink); }
+.pill-prioridad-baja, .pill-estado-cancelada { background: var(--off-soft); color: var(--off-ink); }
+.pill-estado-asignada { background: var(--info-soft); color: var(--upds-blue); }
+.pill-estado-resuelta { background: var(--ok-soft); color: var(--ok-ink); }
+
+/* Badges de Bootstrap más suaves en toda la aplicación */
+.badge { border-radius: 999px; font-weight: 600; letter-spacing: .01em; }
+.badge.text-bg-success { background: var(--ok-soft) !important; color: var(--ok-ink) !important; }
+.badge.text-bg-warning { background: var(--warn-soft) !important; color: var(--warn-ink) !important; }
+.badge.text-bg-danger { background: var(--bad-soft) !important; color: var(--bad-ink) !important; }
+.badge.text-bg-secondary { background: var(--off-soft) !important; color: var(--off-ink) !important; }
+.badge.text-bg-primary { background: var(--info-soft) !important; color: var(--upds-blue) !important; }
+
+/* Paneles, tablas y formularios existentes */
+.bg-white.border.rounded-1, .table-responsive, .filter-panel, .login-panel, .form-panel { border-radius: var(--radius) !important; box-shadow: var(--shadow-sm); }
+.login-panel, .form-panel { padding: 1.5rem; }
+.table-responsive > .table > tbody > tr:last-child > td { border-bottom: 0; }
+.table-responsive > .table > tbody > tr > td:first-child { white-space: nowrap; }
+.table-responsive > .table > thead > tr > th { color: #4b6378; font-size: .7rem; letter-spacing: .03em; text-transform: uppercase; }
+.btn { border-radius: .5rem; }
+.btn-sm { border-radius: .4rem; }
+.form-control, .form-select { border-radius: .5rem; }
+.alert { border: 0; border-left: 4px solid currentColor; box-shadow: var(--shadow-sm); }
+
+/* Estado de conexión legible sobre la barra azul */
+.portal-navbar .offline-status { padding: .3rem .65rem; background: rgb(255 255 255 / 12%); color: #fff; font-size: .74rem; white-space: nowrap; }
+.portal-navbar .offline-status::before { content: ""; flex: 0 0 auto; width: .5rem; height: .5rem; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 0 3px rgb(61 220 132 / 25%); }
+.portal-navbar .offline-status.offline::before { background: #ffb020; box-shadow: 0 0 0 3px rgb(255 176 32 / 25%); }
+
+/* Evitar que el menú se desborde en pantallas medianas (1200–1599 px) */
+@media (min-width: 1200px) and (max-width: 1599.98px) {
+  .portal-navbar .nav-link { gap: .35rem; padding: 0 .55rem; font-size: .83rem; }
+  .portal-account { gap: .4rem; }
+  .portal-account .btn span { display: none; }
+  .portal-account .btn { padding: .3rem .5rem; }
+  .portal-account-name { max-width: 130px; }
+}
+@media (min-width: 1200px) and (max-width: 1439.98px) {
+  .portal-navbar .offline-status { gap: 0; padding: .45rem; font-size: 0; }
+  .portal-account-name { max-width: 26px; font-size: 0; }
+}
+
+@media (max-width: 575.98px) {
+  .welcome-banner { padding: .9rem 1rem; }
+  .welcome-avatar { width: 40px; height: 40px; font-size: 1.15rem; }
+  .kpi-card { gap: .7rem; padding: .85rem .9rem; }
+  .kpi-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+  .kpi-value { font-size: 1.45rem; }
+  .panel-card-header { padding: .75rem .9rem; }
+}

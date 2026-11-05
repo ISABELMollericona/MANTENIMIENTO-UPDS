@@ -1,50 +1,175 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Inicio | Gestión de mantenimiento{% endblock %}
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-  <div><p class="text-uppercase small fw-semibold text-danger mb-1">UPDS Cochabamba</p><h1 class="h3 mb-1">Panel de inicio</h1><p class="text-secondary mb-0">Gestión de mantenimiento y equipamiento universitario</p></div>
+<div class="page-header">
+  <div>
+    <p class="page-kicker">UPDS Cochabamba</p>
+    <h1>Panel de inicio</h1>
+    <p class="page-subtitle">Gestión de mantenimiento y equipamiento universitario</p>
+  </div>
   {% if not user.is_authenticated %}<a class="btn btn-primary" href="{% url 'login' %}"><i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>Iniciar sesión</a>{% endif %}
 </div>
+
 {% if user.is_authenticated %}
-  <section class="border-top border-3 border-danger pt-3" aria-labelledby="welcome-title"><h2 id="welcome-title" class="h5 mb-3">Bienvenido, {{ user.get_full_name|default:user.username }}</h2>
-  {% if mostrar_indicadores %}
-    <div class="row g-3 mb-4">{% for item in equipos_por_estado %}<div class="col-6 col-lg-3"><div class="bg-white border rounded-1 p-3 h-100"><span class="small text-secondary d-block">{{ item.estado }}</span><strong class="h3 mb-0">{{ item.valor }}</strong></div></div>{% endfor %}<div class="col-6 col-lg-3"><div class="bg-white border rounded-1 p-3 h-100"><span class="small text-secondary d-block">Solicitudes abiertas</span><strong class="h3 mb-0">{{ total_solicitudes_abiertas }}</strong><span class="small text-secondary d-block">{% for item in solicitudes_por_prioridad %}{{ item.prioridad }}: {{ item.valor }}{% if not forloop.last %} · {% endif %}{% endfor %}</span></div></div><div class="col-6 col-lg-3"><div class="bg-white border border-danger rounded-1 p-3 h-100"><span class="small text-danger d-block">Preventivos vencidos</span><strong class="h3 text-danger mb-0">{{ preventivos_vencidos }}</strong></div></div><div class="col-6 col-lg-3"><div class="bg-white border rounded-1 p-3 h-100"><span class="small text-secondary d-block">Preventivos próximos</span><strong class="h3 mb-0">{{ preventivos_proximos|length }}</strong></div></div></div>
-    <div class="row g-4"><div class="col-12 col-lg-5"><section aria-labelledby="state-chart-title"><h2 id="state-chart-title" class="h6">Equipos por estado</h2>{{ equipos_por_estado|json_script:"equipment-state-data" }}<div class="chart-frame"><canvas id="equipment-state-chart" aria-label="Gráfico de equipos por estado" role="img"></canvas></div></section></div><div class="col-12 col-lg-7"><section aria-labelledby="upcoming-title"><div class="d-flex justify-content-between align-items-center mb-2"><h2 id="upcoming-title" class="h6 mb-0">Próximos mantenimientos</h2>{% if perms.cuentas.ver_preventivos %}<a class="small" href="{% url 'preventivo:programaciones' %}">Ver todos</a>{% endif %}</div><div class="table-responsive bg-white border rounded-1"><table class="table table-sm align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Equipo</th><th>Plan</th></tr></thead><tbody>{% for item in preventivos_proximos %}<tr><td class="text-nowrap">{{ item.fecha_programada|date:"d/m/Y" }}</td><td>{{ item.equipo.codigo }}</td><td>{{ item.plan.nombre }}</td></tr>{% empty %}<tr><td class="text-secondary py-3" colspan="3">Sin próximos mantenimientos.</td></tr>{% endfor %}</tbody></table></div></section></div>
-      <div class="col-12"><section aria-labelledby="latest-requests-title"><div class="d-flex justify-content-between align-items-center mb-2"><h2 id="latest-requests-title" class="h6 mb-0">Últimas solicitudes</h2>{% if perms.cuentas.ver_solicitudes %}<a class="small" href="{% url 'solicitudes:lista' %}">Ver todas</a>{% endif %}</div><div class="table-responsive bg-white border rounded-1"><table class="table table-sm align-middle mb-0"><thead class="table-light"><tr><th>Solicitud</th><th>Equipo</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>{% for solicitud in ultimas_solicitudes %}<tr><td><a href="{% url 'solicitudes:detalle' solicitud.pk %}">#{{ solicitud.pk }}</a></td><td>{{ solicitud.equipo.codigo }}</td><td>{{ solicitud.get_prioridad_display }}</td><td>{{ solicitud.get_estado_display }}</td><td class="text-nowrap">{{ solicitud.fecha_reporte|date:"d/m/Y" }}</td></tr>{% empty %}<tr><td colspan="5" class="py-3 text-secondary">No hay solicitudes registradas.</td></tr>{% endfor %}</tbody></table></div></section></div>
+  <section class="welcome-banner" aria-labelledby="welcome-title">
+    <div class="welcome-avatar" aria-hidden="true"><i class="bi bi-person"></i></div>
+    <div>
+      <h2 id="welcome-title">Bienvenido, {{ user.get_full_name|default:user.username }}</h2>
+      <p>{% now "l, j \d\e F \d\e Y" %}</p>
     </div>
-  {% else %}<p class="text-secondary mb-0">Tu cuenta no tiene permiso para ver los indicadores del panel.</p>{% endif %}
   </section>
+
+  {% if mostrar_indicadores %}
+    <h2 class="section-title"><i class="bi bi-pc-display" aria-hidden="true"></i>Equipos <span class="section-count">{{ total_equipos }} en total</span></h2>
+    <div class="row g-3 mb-4">
+      {% for item in equipos_por_estado %}
+        <div class="col-6 col-xl-3">
+          <div class="kpi-card kpi-{{ item.clave }}">
+            <span class="kpi-icon" aria-hidden="true">
+              {% if item.clave == "operativo" %}<i class="bi bi-check-circle"></i>{% elif item.clave == "en_mantenimiento" %}<i class="bi bi-tools"></i>{% elif item.clave == "fuera_de_servicio" %}<i class="bi bi-exclamation-octagon"></i>{% else %}<i class="bi bi-archive"></i>{% endif %}
+            </span>
+            <div>
+              <span class="kpi-label">{{ item.estado }}</span>
+              <strong class="kpi-value">{{ item.valor }}</strong>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <h2 class="section-title"><i class="bi bi-clipboard-pulse" aria-hidden="true"></i>Mantenimiento</h2>
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-4">
+        <div class="kpi-card kpi-info">
+          <span class="kpi-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
+          <div>
+            <span class="kpi-label">Solicitudes abiertas</span>
+            <strong class="kpi-value">{{ total_solicitudes_abiertas }}</strong>
+            <span class="kpi-detail">{% for item in solicitudes_por_prioridad %}{{ item.prioridad }}: {{ item.valor }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="kpi-card {% if preventivos_vencidos %}kpi-fuera_de_servicio{% else %}kpi-operativo{% endif %}">
+          <span class="kpi-icon" aria-hidden="true"><i class="bi bi-calendar-x"></i></span>
+          <div>
+            <span class="kpi-label">Preventivos vencidos</span>
+            <strong class="kpi-value">{{ preventivos_vencidos }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-4">
+        <div class="kpi-card kpi-info">
+          <span class="kpi-icon" aria-hidden="true"><i class="bi bi-calendar2-week"></i></span>
+          <div>
+            <span class="kpi-label">Preventivos próximos</span>
+            <strong class="kpi-value">{{ preventivos_proximos|length }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-lg-5">
+        <section class="panel-card h-100" aria-labelledby="state-chart-title">
+          <header class="panel-card-header"><h2 id="state-chart-title"><i class="bi bi-bar-chart" aria-hidden="true"></i>Equipos por estado</h2></header>
+          <div class="panel-card-body">
+            {{ equipos_por_estado|json_script:"equipment-state-data" }}
+            <div class="chart-frame"><canvas id="equipment-state-chart" aria-label="Gráfico de equipos por estado" role="img"></canvas></div>
+          </div>
+        </section>
+      </div>
+      <div class="col-12 col-lg-7">
+        <section class="panel-card h-100" aria-labelledby="upcoming-title">
+          <header class="panel-card-header">
+            <h2 id="upcoming-title"><i class="bi bi-calendar2-check" aria-hidden="true"></i>Próximos mantenimientos</h2>
+            {% if perms.cuentas.ver_preventivos %}<a href="{% url 'preventivo:programaciones' %}">Ver todos <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
+          </header>
+          <div class="table-responsive table-flush">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Fecha</th><th>Equipo</th><th>Plan</th></tr></thead>
+              <tbody>
+                {% for item in preventivos_proximos %}
+                  <tr><td class="text-nowrap"><i class="bi bi-calendar3 text-secondary me-2" aria-hidden="true"></i>{{ item.fecha_programada|date:"d/m/Y" }}</td><td class="fw-semibold text-nowrap">{{ item.equipo.codigo }}</td><td>{{ item.plan.nombre }}</td></tr>
+                {% empty %}
+                  <tr><td class="empty-state" colspan="3"><i class="bi bi-calendar-check" aria-hidden="true"></i>Sin próximos mantenimientos.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <div class="col-12">
+        <section class="panel-card" aria-labelledby="latest-requests-title">
+          <header class="panel-card-header">
+            <h2 id="latest-requests-title"><i class="bi bi-clock-history" aria-hidden="true"></i>Últimas solicitudes</h2>
+            {% if perms.cuentas.ver_solicitudes %}<a href="{% url 'solicitudes:lista' %}">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
+          </header>
+          <div class="table-responsive table-flush">
+            <table class="table table-hover align-middle mb-0">
+              <thead><tr><th>Solicitud</th><th>Equipo</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+              <tbody>
+                {% for solicitud in ultimas_solicitudes %}
+                  <tr>
+                    <td><a href="{% url 'solicitudes:detalle' solicitud.pk %}">#{{ solicitud.pk }}</a></td>
+                    <td class="text-nowrap">{{ solicitud.equipo.codigo }}</td>
+                    <td><span class="pill pill-prioridad-{{ solicitud.prioridad }}">{{ solicitud.get_prioridad_display }}</span></td>
+                    <td><span class="pill pill-estado-{{ solicitud.estado }}">{{ solicitud.get_estado_display }}</span></td>
+                    <td class="text-nowrap">{{ solicitud.fecha_reporte|date:"d/m/Y" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" class="empty-state"><i class="bi bi-inbox" aria-hidden="true"></i>No hay solicitudes registradas.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  {% else %}
+    <div class="panel-card"><div class="panel-card-body empty-state"><i class="bi bi-lock" aria-hidden="true"></i>Tu cuenta no tiene permiso para ver los indicadores del panel.</div></div>
+  {% endif %}
 {% else %}
-  <section class="border-top border-3 border-danger pt-3" aria-labelledby="access-title"><h2 id="access-title" class="h5">Acceso al sistema</h2><p class="text-secondary mb-0">Inicia sesión con tu cuenta institucional para continuar.</p></section>
+  <section class="panel-card" aria-labelledby="access-title">
+    <div class="panel-card-body">
+      <h2 id="access-title" class="h5">Acceso al sistema</h2>
+      <p class="text-secondary mb-0">Inicia sesión con tu cuenta institucional para continuar.</p>
+    </div>
+  </section>
 {% endif %}
 {% endblock %}
 {% block extra_js %}{% if mostrar_indicadores %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="{% static 'vendor/chartjs/chart.umd.min.js' %}"></script>
 <script>
   const equipmentStateData = JSON.parse(document.getElementById('equipment-state-data').textContent);
   const equipmentStateColors = {
-    'Operativo': '#198754',
-    'En mantenimiento': '#e0a800',
-    'Fuera de servicio': '#c8102e',
-    'Dado de baja': '#6c757d'
+    operativo: '#198754',
+    en_mantenimiento: '#e0a800',
+    fuera_de_servicio: '#c8102e',
+    dado_de_baja: '#6c757d'
   };
+  Chart.defaults.font.family = '"DM Sans", "Segoe UI", sans-serif';
+  Chart.defaults.color = '#687889';
   new Chart(document.getElementById('equipment-state-chart'), {
-    type: 'bar',
+    type: 'doughnut',
     data: {
       labels: equipmentStateData.map((item) => item.estado),
       datasets: [{
-        label: 'Equipos',
         data: equipmentStateData.map((item) => item.valor),
-        backgroundColor: equipmentStateData.map((item) => equipmentStateColors[item.estado] || '#003a78'),
-        borderRadius: 3,
-        maxBarThickness: 44
+        backgroundColor: equipmentStateData.map((item) => equipmentStateColors[item.clave] || '#064b87'),
+        borderColor: '#ffffff',
+        borderWidth: 3,
+        hoverOffset: 6
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } }
+      }
     }
   });
 </script>

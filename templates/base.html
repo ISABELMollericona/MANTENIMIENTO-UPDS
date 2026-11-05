@@ -5,9 +5,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Gestión de mantenimiento | UPDS{% endblock %}</title>
-  <meta name="theme-color" content="#003A78">
+  <meta name="theme-color" content="#064b87">
   <link rel="manifest" href="{% url 'manifest' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/ui.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -65,6 +71,7 @@
     {% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>{% endfor %}</div>{% endif %}
     {% block content %}{% endblock %}
   </main>
+  <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
   <script defer src="{% static 'js/offline.js' %}"></script>
   {% block extra_js %}{% endblock %}
 </body>
