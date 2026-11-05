@@ -108,6 +108,26 @@ main .text-uppercase.small.fw-semibold.text-danger { color: var(--upds-red) !imp
   .portal-breadcrumb { margin-bottom: .8rem; }
 }
 
+.offline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .4rem .7rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: .78rem;
+  background: #dfe7ef;
+  color: #233746;
+}
+.offline-status.online {
+  background: rgba(20, 150, 90, .12);
+  color: #127748;
+}
+.offline-status.offline {
+  background: rgba(88, 98, 110, .12);
+  color: #536170;
+}
+
 @media (max-width: 575.98px) {
   .portal-masthead > .portal-container { padding-inline: .9rem; }
   .portal-brand { gap: .5rem; }

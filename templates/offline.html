@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Sin conexión | UPDS{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="form-panel text-center">
+        <div class="mb-3 text-warning display-4">
+          <i class="bi bi-wifi-off" aria-hidden="true"></i>
+        </div>
+        <h1>Sin conexión temporal</h1>
+        <p class="lead mb-3">La pantalla solicitada no está disponible de momento. Puedes seguir usando las funciones que ya quedaron guardadas en el dispositivo.</p>
+        <a class="btn btn-primary" href="{% url 'panel' %}">Volver al inicio</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

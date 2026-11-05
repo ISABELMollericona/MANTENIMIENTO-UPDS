@@ -1,10 +1,19 @@
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.utils import timezone
+from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView
 
 from apps.equipos.models import Equipo
 from apps.preventivo.models import MantenimientoProgramado
 from apps.solicitudes.models import Solicitud
+
+
+@require_GET
+def keepalive(request):
+    response = HttpResponse(status=204)
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 class PanelInicioView(TemplateView):

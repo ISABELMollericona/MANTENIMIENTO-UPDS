@@ -61,7 +61,7 @@ class Equipo(models.Model):
         cambios = []
         with transaction.atomic():
             if self.pk:
-                anterior = type(self).objects.select_for_update().select_related("ambiente", "responsable").get(pk=self.pk)
+                anterior = type(self).objects.select_for_update(of=("self",)).select_related("ambiente", "responsable").get(pk=self.pk)
                 for campo in campos:
                     valor_anterior = getattr(anterior, campo)
                     valor_nuevo = getattr(self, campo)

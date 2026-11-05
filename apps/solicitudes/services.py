@@ -20,7 +20,7 @@ TRANSICIONES_PERMITIDAS = {
 def asignar_tecnico(solicitud, tecnico, usuario):
     if not usuario.has_perm("cuentas.asignar_tecnico"):
         raise PermissionDenied("No tienes permiso para asignar técnicos.")
-    actual = Solicitud.objects.select_for_update().select_related("tecnico_asignado").get(pk=solicitud.pk)
+    actual = Solicitud.objects.select_for_update(of=("self",)).select_related("tecnico_asignado").get(pk=solicitud.pk)
     if actual.estado not in {Solicitud.Estado.REGISTRADA, Solicitud.Estado.ASIGNADA}:
         raise ValidationError("Solo se puede asignar técnico a una solicitud registrada o asignada.")
     if not tecnico.is_active or not tecnico.has_perm("cuentas.crear_intervenciones"):

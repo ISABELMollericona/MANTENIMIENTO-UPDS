@@ -1,13 +1,16 @@
 """Configuración del sistema universitario de mantenimiento."""
 
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+for key, value in dotenv_values(BASE_DIR / ".env").items():
+    if value is not None and key not in os.environ:
+        os.environ[key] = value
 
 DEBUG = os.getenv("DEBUG", "True").lower() in {"true", "1", "yes"}
 SECRET_KEY = os.getenv("SECRET_KEY", "")
@@ -16,7 +19,16 @@ if not SECRET_KEY:
         raise RuntimeError("SECRET_KEY es obligatoria cuando DEBUG=False.")
     SECRET_KEY = "dev-only-change-this-secret-key"
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()]
+render_host = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if render_host:
+    ALLOWED_HOSTS.append(render_host)
+    ALLOWED_HOSTS.append("*.onrender.com")
+ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
+
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+if render_host:
+    CSRF_TRUSTED_ORIGINS.extend([f"https://{render_host}", f"http://{render_host}"])
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CSRF_TRUSTED_ORIGINS))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,8 +82,13 @@ WSGI_APPLICATION = "mantenimiento.wsgi.application"
 ASGI_APPLICATION = "mantenimiento.asgi.application"
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
-if DATABASE_URL:
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)}
+TESTING = "test" in sys.argv
+
+if TESTING:
+    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
+elif DATABASE_URL:
+    requiere_ssl = DATABASE_URL.startswith(("postgres://", "postgresql://"))
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=requiere_ssl)}
 else:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 

@@ -42,3 +42,12 @@ class PanelInicioTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertContains(respuesta, "no tiene permiso para ver los indicadores")
         self.assertNotContains(respuesta, "EQ-001")
+
+
+class KeepAliveTests(TestCase):
+    def test_keepalive_responde_sin_autenticacion_ni_consultas(self):
+        with self.assertNumQueries(0):
+            respuesta = self.client.get(reverse("keepalive"))
+
+        self.assertEqual(respuesta.status_code, 204)
+        self.assertEqual(respuesta["Cache-Control"], "no-store")
