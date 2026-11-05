@@ -78,3 +78,51 @@ class ReintentoBaseDatosMiddlewareTests(SimpleTestCase):
 
         html = render_to_string("500.html")
         self.assertIn("Reintentar", html)
+
+
+class SaludTests(SimpleTestCase):
+    databases = {"default"}
+
+    def test_salud_ok_con_tablas(self):
+        respuesta = self.client.get("/api/salud/")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json()["base_de_datos"], "ok")
+        self.assertEqual(respuesta["Cache-Control"], "no-store")
+
+    def test_salud_informa_tablas_faltantes(self):
+        with mock.patch("django.db.backends.base.introspection.BaseDatabaseIntrospection.table_names", return_value=[]):
+            respuesta = self.client.get("/api/salud/")
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertEqual(respuesta.json()["base_de_datos"], "sin_tablas")
+
+    def test_salud_informa_error_sin_detalles_sensibles(self):
+        with mock.patch("django.db.backends.utils.CursorWrapper.execute", side_effect=OperationalError("password=secreta host=x")),                 self.assertLogs("mantenimiento.db_resiliencia", "ERROR"):
+            respuesta = self.client.get("/api/salud/")
+        self.assertEqual(respuesta.status_code, 503)
+        self.assertEqual(respuesta.json()["error"], "OperationalError")
+        self.assertNotIn("secreta", respuesta.content.decode())
+
+
+class RenderSinDatabaseUrlTests(SimpleTestCase):
+    def test_render_sin_database_url_falla_con_mensaje_claro(self):
+        import importlib
+        from django.core.exceptions import ImproperlyConfigured
+        import mantenimiento.settings as settings_mod
+
+        entorno = {"RENDER": "true", "DATABASE_URL": ""}
+        with mock.patch.dict("os.environ", entorno), mock.patch("sys.argv", ["gunicorn"]):
+            with self.assertRaisesMessage(ImproperlyConfigured, "DATABASE_URL"):
+                importlib.reload(settings_mod)
+        importlib.reload(settings_mod)
+
+    def test_database_url_con_comillas_se_limpia(self):
+        import importlib
+        import mantenimiento.settings as settings_mod
+
+        url = "'postgresql://u:p@ejemplo-pooler.neon.tech/db?sslmode=require'"
+        with mock.patch.dict("os.environ", {"DATABASE_URL": url}), mock.patch("sys.argv", ["gunicorn"]):
+            recargado = importlib.reload(settings_mod)
+        try:
+            self.assertEqual(recargado.DATABASES["default"]["ENGINE"], "django.db.backends.postgresql")
+        finally:
+            importlib.reload(settings_mod)

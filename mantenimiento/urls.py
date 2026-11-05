@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 
 from apps.cuentas.auth_views import CambioContrasenaView, RestablecerContrasenaConfirmView
 from apps.panel.views import PanelInicioView, keepalive
+from mantenimiento.db_resiliencia import salud
 from mantenimiento.offline import catalogos_offline, sincronizar_offline
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +34,7 @@ def service_worker(request):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/keepalive/", keepalive, name="keepalive"),
+    path("api/salud/", salud, name="salud"),
     path("api/offline/catalogos/", catalogos_offline, name="offline_catalogos"),
     path("api/offline/sincronizar/", sincronizar_offline, name="offline_sincronizar"),
     path("manifest.webmanifest", manifest_webmanifest, name="manifest"),

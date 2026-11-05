@@ -36,6 +36,35 @@ def _cerrar_conexiones():
             pass
 
 
+def salud(request):
+    """Diagnóstico público de la base de datos (sin hosts, usuarios ni contraseñas).
+
+    Responde 200 si la base de datos contesta y tiene las tablas de Django, y 503 si no.
+    Sirve para el health check de Render y para diagnosticar errores 500.
+    """
+    from django.db import connection
+    from django.http import JsonResponse
+
+    datos = {"motor": connection.vendor, "base_de_datos": "ok"}
+    estado = 200
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        tablas = set(connection.introspection.table_names())
+        faltantes = sorted({"django_session", "django_migrations"} - tablas)
+        if faltantes:
+            datos.update(base_de_datos="sin_tablas", faltan=faltantes, ayuda="Ejecuta python manage.py migrate en esta base de datos.")
+            estado = 503
+    except Exception as exc:  # noqa: BLE001 - se informa el tipo de error, no el detalle
+        logger.exception("Health check de base de datos falló")
+        datos.update(base_de_datos="error", error=type(exc).__name__)
+        estado = 503
+        _cerrar_conexiones()
+    response = JsonResponse(datos, status=estado)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
 class ReintentoBaseDatosMiddleware:
     """Debe ir primero en MIDDLEWARE para cubrir también sesiones y autenticación."""
 

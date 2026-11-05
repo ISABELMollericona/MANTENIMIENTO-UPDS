@@ -82,8 +82,18 @@ TEMPLATES = [
 WSGI_APPLICATION = "mantenimiento.wsgi.application"
 ASGI_APPLICATION = "mantenimiento.asgi.application"
 
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip().strip("'\"")
 TESTING = "test" in sys.argv
+# En Render el disco es temporal: sin DATABASE_URL se usaría un SQLite vacío y todas
+# las páginas que consultan la base de datos responderían "Server Error (500)".
+# Es preferible que el despliegue falle con un mensaje claro.
+if os.getenv("RENDER") and not DATABASE_URL and not TESTING:
+    from django.core.exceptions import ImproperlyConfigured
+
+    raise ImproperlyConfigured(
+        "Falta la variable de entorno DATABASE_URL en Render. Configúrala con la URL "
+        "postgresql:// de Neon en Environment y vuelve a desplegar."
+    )
 
 if TESTING:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
