@@ -104,7 +104,10 @@
     if (!('serviceWorker' in navigator)) {
       return;
     }
-    navigator.serviceWorker.register('/service-worker.js').catch(() => undefined);
+    navigator.serviceWorker
+      .register('/service-worker.js', { updateViaCache: 'none' })
+      .then(registration => registration.update())
+      .catch(() => undefined);
   }
 
   function startKeepAlive() {
