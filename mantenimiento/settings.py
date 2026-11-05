@@ -48,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "mantenimiento.db_resiliencia.ReintentoBaseDatosMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -59,7 +60,7 @@ MIDDLEWARE = [
     "apps.cuentas.middleware.CambioContrasenaObligatorioMiddleware",
 ]
 if not DEBUG:
-    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+    MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "mantenimiento.urls"
 
@@ -87,8 +88,31 @@ TESTING = "test" in sys.argv
 if TESTING:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "test_db.sqlite3"}}
 elif DATABASE_URL:
-    requiere_ssl = DATABASE_URL.startswith(("postgres://", "postgresql://"))
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=requiere_ssl)}
+    es_postgres = DATABASE_URL.startswith(("postgres://", "postgresql://"))
+    # Neon suspende el cómputo por inactividad y cierra las conexiones abiertas.
+    # Sin health checks, la primera petición tras la pausa reutiliza una conexión
+    # muerta y responde "Server Error (500)". Con CONN_HEALTH_CHECKS Django verifica
+    # la conexión reutilizada al inicio de cada petición y reconecta si está caída.
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=int(os.getenv("DB_CONN_MAX_AGE", "60")),
+            conn_health_checks=True,
+            ssl_require=es_postgres,
+        )
+    }
+    if es_postgres:
+        DATABASES["default"].setdefault("OPTIONS", {}).update(
+            {
+                "connect_timeout": 10,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 3,
+            }
+        )
+        # El pooler de Neon (PgBouncer en modo transacción) no admite cursores del lado servidor.
+        DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 else:
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 
@@ -137,3 +161,17 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+# Registrar errores en la consola (stdout/stderr) para verlos en los logs de Render.
+# Con DEBUG=False Django, por defecto, solo los envía por correo a ADMINS y no los muestra.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"simple": {"format": "%(asctime)s %(levelname)s %(name)s: %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "simple"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django": {"handlers": ["console"], "level": os.getenv("DJANGO_LOG_LEVEL", "INFO"), "propagate": False},
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
