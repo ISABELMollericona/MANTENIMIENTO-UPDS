@@ -11,7 +11,10 @@ from .services import DEFINICIONES_REPORTES, generar_reporte
 
 class ReportesView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = "cuentas.ver_reportes"
-    raise_exception = True
+    @property
+    def raise_exception(self):
+        # Sin sesión: redirige al login (y vuelve aquí). Con sesión y sin permiso: 403.
+        return self.request.user.is_authenticated
 
     def get(self, request):
         clave = request.GET.get("reporte", DEFINICIONES_REPORTES[0][0])

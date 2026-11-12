@@ -17,7 +17,10 @@ from .services import asignar_tecnico, cambiar_estado
 
 
 class AccesoSolicitudes(LoginRequiredMixin, PermissionRequiredMixin):
-    raise_exception = True
+    @property
+    def raise_exception(self):
+        # Sin sesión: redirige al login (y vuelve aquí). Con sesión y sin permiso: 403.
+        return self.request.user.is_authenticated
 
 
 class ListaSolicitudesView(AccesoSolicitudes, ListView):
@@ -76,7 +79,10 @@ class CrearSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     form_class = SolicitudForm
     template_name = "solicitudes/formulario.html"
     permission_required = "cuentas.crear_solicitudes"
-    raise_exception = True
+    @property
+    def raise_exception(self):
+        # Sin sesión: redirige al login (y vuelve aquí). Con sesión y sin permiso: 403.
+        return self.request.user.is_authenticated
     success_url = reverse_lazy("solicitudes:lista")
 
     def form_valid(self, form):
@@ -94,7 +100,10 @@ class DetalleSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     template_name = "solicitudes/detalle.html"
     context_object_name = "solicitud"
     permission_required = "cuentas.ver_solicitudes"
-    raise_exception = True
+    @property
+    def raise_exception(self):
+        # Sin sesión: redirige al login (y vuelve aquí). Con sesión y sin permiso: 403.
+        return self.request.user.is_authenticated
 
     def get_queryset(self):
         queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "solicitante", "tecnico_asignado").prefetch_related("historial__usuario")
@@ -117,7 +126,10 @@ class DetalleSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
 
 class AsignarTecnicoView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = "cuentas.asignar_tecnico"
-    raise_exception = True
+    @property
+    def raise_exception(self):
+        # Sin sesión: redirige al login (y vuelve aquí). Con sesión y sin permiso: 403.
+        return self.request.user.is_authenticated
 
     def post(self, request, pk):
         solicitud = get_object_or_404(Solicitud, pk=pk)

@@ -14,7 +14,10 @@ from .services import es_administrador, registrar_auditoria
 
 
 class AccesoProtegido(LoginRequiredMixin, PermissionRequiredMixin):
-    raise_exception = True
+    @property
+    def raise_exception(self):
+        # Sin sesión: redirige al login (y vuelve aquí). Con sesión y sin permiso: 403.
+        return self.request.user.is_authenticated
 
 
 class ListaUsuariosView(AccesoProtegido, ListView):

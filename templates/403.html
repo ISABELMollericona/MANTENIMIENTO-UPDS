@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Acceso restringido | UPDS{% endblock %}
+{% block content %}
+<div class="content-narrow py-4">
+  <div class="panel-card">
+    <div class="panel-card-body empty-state">
+      <i class="bi bi-shield-lock" aria-hidden="true"></i>
+      <h1 class="h4 mt-2">Acceso restringido</h1>
+      <p class="mb-3">Tu cuenta no tiene permiso para ver esta página. Si crees que es un error, pide al administrador que revise tu rol.</p>
+      <a class="btn btn-primary" href="{% url 'panel' %}"><i class="bi bi-house me-2" aria-hidden="true"></i>Volver al inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

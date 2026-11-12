@@ -51,3 +51,26 @@ class KeepAliveTests(TestCase):
 
         self.assertEqual(respuesta.status_code, 204)
         self.assertEqual(respuesta["Cache-Control"], "no-store")
+
+class AccesoSinSesionTests(TestCase):
+    """Sin sesión se redirige al login; con sesión y sin permiso se responde 403 con la página propia."""
+
+    rutas = ["/equipos/", "/solicitudes/", "/reportes/", "/ambientes/", "/preventivo/", "/intervenciones/mis-tareas/", "/cuentas/usuarios/", "/cuentas/roles/"]
+
+    def test_anonimo_va_al_login_y_vuelve(self):
+        for ruta in self.rutas:
+            with self.subTest(ruta=ruta):
+                respuesta = self.client.get(ruta)
+                self.assertEqual(respuesta.status_code, 302)
+                self.assertTrue(respuesta["Location"].startswith("/cuentas/ingresar/?next="))
+
+    def test_usuario_sin_permiso_ve_403_propio(self):
+        from django.contrib.auth import get_user_model
+
+        usuario = get_user_model().objects.create_user("sinpermisos", password="Clave-Prueba-123!")
+        self.client.force_login(usuario)
+        for ruta in self.rutas:
+            with self.subTest(ruta=ruta):
+                respuesta = self.client.get(ruta)
+                self.assertEqual(respuesta.status_code, 403)
+                self.assertContains(respuesta, "Acceso restringido", status_code=403)
