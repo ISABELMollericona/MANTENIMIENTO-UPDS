@@ -12,7 +12,8 @@ for key, value in dotenv_values(BASE_DIR / ".env").items():
     if value is not None and key not in os.environ:
         os.environ[key] = value
 
-DEBUG = os.getenv("DEBUG", "True").lower() in {"true", "1", "yes"}
+# En Render (variable RENDER) DEBUG es False aunque no se configure; en local, True.
+DEBUG = os.getenv("DEBUG", "False" if os.getenv("RENDER") else "True").lower() in {"true", "1", "yes"}
 SECRET_KEY = os.getenv("SECRET_KEY", "")
 if not SECRET_KEY:
     if not DEBUG:
@@ -155,7 +156,6 @@ AUTH_USER_MODEL = "cuentas.Usuario"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panel"
 LOGOUT_REDIRECT_URL = "login"
-REPAIR_REPLACE_THRESHOLD = float(os.getenv("REPAIR_REPLACE_THRESHOLD", "0.5"))
 EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
     "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",

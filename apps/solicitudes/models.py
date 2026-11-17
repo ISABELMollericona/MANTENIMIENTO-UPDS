@@ -20,10 +20,13 @@ class Solicitud(models.Model):
         CANCELADA = "cancelada", "Cancelada"
 
     equipo = models.ForeignKey(Equipo, verbose_name="Equipo", on_delete=models.PROTECT, related_name="solicitudes")
-    descripcion = models.TextField("Descripción de la falla")
+    # Los docentes no tienen cuenta: el jefe de carrera registra el reporte en su nombre
+    # y aquí queda constancia de qué docente hizo el pedido.
+    docente_solicitante = models.CharField("Docente solicitante", max_length=150)
+    descripcion = models.TextField("Problema que presenta el equipo")
     prioridad = models.CharField("Prioridad", max_length=8, choices=Prioridad.choices, default=Prioridad.MEDIA, db_index=True)
     estado = models.CharField("Estado", max_length=16, choices=Estado.choices, default=Estado.REGISTRADA, db_index=True)
-    solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Solicitante", on_delete=models.PROTECT, related_name="solicitudes_reportadas")
+    solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Registrado por", on_delete=models.PROTECT, related_name="solicitudes_reportadas")
     tecnico_asignado = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Técnico asignado", null=True, blank=True, on_delete=models.SET_NULL, related_name="solicitudes_asignadas")
     fecha_reporte = models.DateTimeField("Fecha de reporte", default=timezone.now, db_index=True)
     fecha_cierre = models.DateTimeField("Fecha de cierre", null=True, blank=True, db_index=True)
@@ -36,8 +39,8 @@ class Solicitud(models.Model):
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Creado por", null=True, blank=True, on_delete=models.SET_NULL, related_name="solicitudes_creadas")
 
     class Meta:
-        verbose_name = "solicitud de mantenimiento"
-        verbose_name_plural = "solicitudes de mantenimiento"
+        verbose_name = "reporte de falla"
+        verbose_name_plural = "reportes de falla"
         ordering = ["-fecha_reporte", "-pk"]
         indexes = [
             models.Index(fields=["estado", "prioridad", "fecha_reporte"], name="sol_estado_pri_fecha_idx"),
@@ -45,10 +48,10 @@ class Solicitud(models.Model):
         ]
 
     def __str__(self):
-        return f"Solicitud #{self.pk} - {self.equipo.codigo}"
+        return f"Reporte #{self.pk} - {self.equipo.codigo}"
 
     def delete(self, *args, **kwargs):
-        raise ValidationError("Las solicitudes no se eliminan; deben cancelarse para conservar su historial.")
+        raise ValidationError("Los reportes de falla no se eliminan; deben cancelarse para conservar su historial.")
 
 
 class HistorialSolicitud(models.Model):

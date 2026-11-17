@@ -1,0 +1,124 @@
+// Modelo entidad-relación (tablas de PostgreSQL). Notación pata de gallo: ┼ uno, ○ cero, ⋔ muchos.
+digraph er {
+  graph [rankdir=LR, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.25, ranksep=0.7, labelloc=t, splines=true,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Modelo entidad-relación</B></FONT><BR/><FONT POINT-SIZE="9.5" COLOR="#5D6875">PK clave primaria · FK clave foránea · todas las tablas tienen además creado_en / actualizado_en</FONT>>];
+  node  [fontname="Arial", fontsize=9, shape=plain];
+  edge  [color="#4B6378", dir=both, arrowsize=0.8, penwidth=1.1];
+
+  usuario [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>cuentas_usuario</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">username (único) · password</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">first_name · last_name · email</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">is_active · is_superuser</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">force_password_change</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">creado_por_id</TD></TR></TABLE>>];
+
+  ugroups [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#687889">
+    <TR><TD COLSPAN="2" BGCOLOR="#687889"><FONT COLOR="white"><B>cuentas_usuario_groups</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">usuario_id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">group_id</TD></TR></TABLE>>];
+
+  grupo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#687889">
+    <TR><TD COLSPAN="2" BGCOLOR="#687889"><FONT COLOR="white"><B>auth_group</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">name (único)</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT"><I>permisos vía auth_group_permissions</I></TD></TR></TABLE>>];
+
+  rol [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>cuentas_rol</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">grupo_id (único)</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">nombre · descripcion · protegido</TD></TR></TABLE>>];
+
+  auditoria [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>cuentas_auditoriaseguridad</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">usuario_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">accion · detalle · fecha · ip</TD></TR></TABLE>>];
+
+  ambiente [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>ubicaciones_ambiente</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">nombre · tipo · bloque · activo</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">responsable_id</TD></TR></TABLE>>];
+
+  categoria [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>equipos_categoriaequipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">nombre (único) · descripcion</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">es_periferico · activo</TD></TR></TABLE>>];
+
+  estado [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>equipos_estadoequipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">nombre (único) · tipo · orden · activo</TD></TR></TABLE>>];
+
+  equipo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>equipos_equipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">codigo (único) · marca · modelo</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">numero_serie · fecha_compra</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">categoria_id · estado_id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">ambiente_id · equipo_principal_id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">responsable_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">fecha_baja · motivo_baja</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">informado_vicerrectoria · fecha_informe</TD></TR></TABLE>>];
+
+  histeq [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>equipos_historialequipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">equipo_id · usuario_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">campo_cambiado · valor_anterior</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">valor_nuevo · fecha</TD></TR></TABLE>>];
+
+  solicitud [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>solicitudes_solicitud</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">equipo_id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">solicitante_id · tecnico_asignado_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">docente_solicitante · descripcion</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">prioridad · estado</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">fecha_reporte · fecha_cierre</TD></TR></TABLE>>];
+
+  histsol [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>solicitudes_historialsolicitud</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">solicitud_id · usuario_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">estado_anterior · estado_nuevo</TD></TR></TABLE>>];
+
+  reparacion [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>intervenciones_intervencion</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">solicitud_id · tecnico_id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">laboratorio_origen_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">fecha_salida · fecha_devolucion</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">diagnostico · trabajo_realizado</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">repuestos_usados · resultado</TD></TR></TABLE>>];
+
+  preventivo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#064B87">
+    <TR><TD COLSPAN="2" BGCOLOR="#064B87"><FONT COLOR="white"><B>preventivo_mantenimientopreventivo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT"><B>PK</B></TD><TD ALIGN="LEFT">id</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>FK</B></TD><TD ALIGN="LEFT">laboratorio_id · tecnico_id</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">anio · numero (único con laboratorio)</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">fecha_programada · estado</TD></TR>
+    <TR><TD></TD><TD ALIGN="LEFT">fecha_realizada · observaciones</TD></TR></TABLE>>];
+
+  // Relaciones: el lado "muchos" (pata de gallo) va en la tabla que tiene la FK.
+  ugroups -> usuario [arrowtail=crowodot, arrowhead=teetee];
+  ugroups -> grupo [arrowtail=crowodot, arrowhead=teetee];
+  rol -> grupo [arrowtail=teetee, arrowhead=teetee];
+  auditoria -> usuario [arrowtail=crowodot, arrowhead=teeodot];
+  histeq -> equipo [arrowtail=crowodot, arrowhead=teetee];
+  equipo -> categoria [arrowtail=crowodot, arrowhead=teetee];
+  equipo -> estado [arrowtail=crowodot, arrowhead=teetee];
+  equipo -> ambiente [arrowtail=crowodot, arrowhead=teeodot];
+  equipo -> equipo [arrowtail=crowodot, arrowhead=teeodot, tailport=s, headport=e];
+  solicitud -> equipo [arrowtail=crowodot, arrowhead=teetee];
+  solicitud -> usuario [arrowtail=crowodot, arrowhead=teetee, style=dashed, constraint=false];
+  histsol -> solicitud [arrowtail=crowodot, arrowhead=teetee];
+  reparacion -> solicitud [arrowtail=crowodot, arrowhead=teetee];
+  reparacion -> ambiente [arrowtail=crowodot, arrowhead=teeodot, style=dashed, constraint=false];
+  preventivo -> ambiente [arrowtail=crowodot, arrowhead=teetee];
+  preventivo -> usuario [arrowtail=crowodot, arrowhead=teeodot, style=dashed, constraint=false];
+}

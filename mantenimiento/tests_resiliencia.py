@@ -61,6 +61,20 @@ class ReintentoBaseDatosMiddlewareTests(SimpleTestCase):
         self.assertEqual(respuesta.status_code, 500)
         self.assertEqual(len(llamadas), 1)
 
+    def test_reintenta_post_de_inicio_de_sesion_tras_error_transitorio(self):
+        llamadas = []
+
+        def vista(request):
+            llamadas.append(1)
+            if len(llamadas) == 1:
+                raise OperationalError("server closed the connection unexpectedly")
+            return HttpResponse("ok")
+
+        with self.assertLogs("django.request", "ERROR"):
+            respuesta = self._middleware(vista)(RequestFactory().post("/cuentas/ingresar/"))
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(len(llamadas), 2)
+
     def test_no_reintenta_otros_errores(self):
         llamadas = []
 

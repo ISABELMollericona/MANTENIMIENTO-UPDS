@@ -1,0 +1,20 @@
+// Estados de un mantenimiento preventivo del cronograma.
+digraph estados_preventivo {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.6, ranksep=0.5, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de estados · mantenimiento preventivo</B></FONT>>];
+  node  [fontname="Arial", fontsize=10.5, shape=box, style="rounded,filled", color="#064B87", penwidth=1.3, margin="0.18,0.08"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", arrowsize=0.75];
+
+  inicio [label="", shape=circle, style=filled, fillcolor="#064B87", width=0.22, fixedsize=true];
+  pendiente [label="Pendiente", fillcolor="#E6EFF8"];
+  vencido [label=<<B>Vencido</B><BR/><FONT POINT-SIZE="9">calculado: pendiente con<BR/>fecha programada &lt; hoy</FONT>>, fillcolor="#FDE6EA", style="rounded,filled,dashed"];
+  realizado [label="Realizado", fillcolor="#E3F4EA"];
+  eliminado [label="", shape=doublecircle, style=filled, fillcolor="#064B87", width=0.18, fixedsize=true];
+
+  inicio -> pendiente [label=" el responsable carga\n el cronograma (2 o 3 por año)"];
+  pendiente -> vencido [label=" pasa la fecha\n programada", style=dashed];
+  pendiente -> realizado [label=" marcar realizado\n (fecha ≤ hoy)"];
+  vencido -> realizado [label=" marcar realizado"];
+  realizado -> pendiente [label=" volver a pendiente\n (si se marcó por error)", style=dashed, constraint=false];
+  pendiente -> eliminado [label=" se quita la 3.ª fecha\n (solo si está pendiente)"];
+}

@@ -1,0 +1,85 @@
+// Diagrama de clases (modelos de Django). Todos los modelos guardan además creado_en / actualizado_en / creado_por.
+digraph clases {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.3, ranksep=0.55, labelloc=t, splines=true,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de clases (modelos)</B></FONT>>];
+  node  [fontname="Arial", fontsize=9.5, shape=plain];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", arrowhead=vee, arrowsize=0.7];
+
+  Usuario [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>Usuario</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="8">(AbstractUser)</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">username · nombres · email<BR/>is_active · is_superuser<BR/>force_password_change: bool</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">has_perm(permiso)<BR/>get_full_name()</TD></TR></TABLE>>];
+
+  Rol [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>Rol</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">nombre · descripcion<BR/>protegido: bool</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">save() · delete()</TD></TR></TABLE>>];
+
+  Grupo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#687889">
+    <TR><TD BGCOLOR="#687889"><FONT COLOR="white"><B>Group (Django)</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">name<BR/>permissions: Permission[*]</TD></TR></TABLE>>];
+
+  Auditoria [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>AuditoriaSeguridad</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">accion · detalle<BR/>fecha · ip</TD></TR></TABLE>>];
+
+  Ambiente [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>Ambiente</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="8">(laboratorio)</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">nombre · bloque<BR/>tipo = laboratorio · activo</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">laboratorios()</TD></TR></TABLE>>];
+
+  Categoria [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>CategoriaEquipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">nombre · descripcion<BR/>es_periferico: bool · activo</TD></TR></TABLE>>];
+
+  Estado [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>EstadoEquipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">nombre (editable) · orden · activo<BR/>tipo: operativo | reparacion | baja</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">del_tipo(tipo)</TD></TR></TABLE>>];
+
+  Equipo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>Equipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">codigo (único) · marca · modelo<BR/>numero_serie · fecha_compra<BR/>fecha_baja · motivo_baja<BR/>informado_vicerrectoria: bool<BR/>fecha_informe_vicerrectoria</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">esta_de_baja · esta_en_reparacion<BR/>clean() · save(): registra historial<BR/>delete(): no permitido</TD></TR></TABLE>>];
+
+  HistEquipo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>HistorialEquipo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">campo_cambiado · valor_anterior<BR/>valor_nuevo · fecha</TD></TR></TABLE>>];
+
+  Solicitud [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>Solicitud</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="8">(reporte de falla)</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">docente_solicitante · descripcion<BR/>prioridad · estado<BR/>fecha_reporte · fecha_cierre<BR/>motivo_cancelacion</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">delete(): no permitido</TD></TR></TABLE>>];
+
+  HistSolicitud [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>HistorialSolicitud</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">estado_anterior · estado_nuevo<BR/>fecha · comentario</TD></TR></TABLE>>];
+
+  Intervencion [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>Intervencion</B></FONT><BR/><FONT COLOR="white" POINT-SIZE="8">(reparación)</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">fecha_salida · fecha_devolucion<BR/>diagnostico · trabajo_realizado<BR/>repuestos_usados (texto) · resultado</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">dias_fuera · terminada<BR/>clean(): devolución ≥ salida</TD></TR></TABLE>>];
+
+  Preventivo [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" COLOR="#064B87">
+    <TR><TD BGCOLOR="#064B87"><FONT COLOR="white"><B>MantenimientoPreventivo</B></FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT">anio · numero (1–3)<BR/>fecha_programada · estado<BR/>fecha_realizada · observaciones</TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#EAF2F8">vencido · clean()</TD></TR></TABLE>>];
+
+
+  Rol -> Grupo [label="1      1", arrowhead=none];
+  Grupo -> Usuario [style=invis];
+  Usuario -> Grupo [label="  *   roles   *", arrowhead=vee, constraint=false];
+  Auditoria -> Usuario [label="*   0..1"];
+  Equipo -> Ambiente [label=" *  laboratorio  0..1"];
+  Equipo -> Categoria [label=" *   1"];
+  Equipo -> Estado [label=" *   1"];
+  Equipo -> Equipo [label=" periféricos *\n computadora 0..1", headport=e, tailport=e];
+  HistEquipo -> Equipo [label="*   1"];
+  Solicitud -> Equipo [label=" *   1"];
+  Solicitud -> Usuario [label=" registrado por /\n técnico asignado", constraint=false, style=dashed];
+  HistSolicitud -> Solicitud [label="*   1"];
+  Intervencion -> Solicitud [label=" *   1"];
+  Intervencion -> Ambiente [label=" laboratorio de origen", constraint=false, style=dashed];
+  Preventivo -> Ambiente [label=" *   1"];
+  Preventivo -> Usuario [label=" técnico 0..1", constraint=false, style=dashed];
+}

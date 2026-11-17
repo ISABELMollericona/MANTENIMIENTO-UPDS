@@ -24,7 +24,7 @@ class ListaAmbientesView(AccesoUbicaciones, ListView):
     permission_required = "cuentas.ver_ambientes"
 
     def get_queryset(self):
-        queryset = Ambiente.objects.select_related("responsable")
+        queryset = Ambiente.objects.filter(tipo=Ambiente.Tipo.LABORATORIO).select_related("responsable")
         busqueda = self.request.GET.get("q", "").strip()
         tipo = self.request.GET.get("tipo", "")
         bloque = self.request.GET.get("bloque", "").strip()
@@ -54,7 +54,8 @@ class CrearAmbienteView(AccesoUbicaciones, CreateView):
 
     def form_valid(self, form):
         form.instance.creado_por = self.request.user
-        messages.success(self.request, "El ambiente se registró correctamente.")
+        form.instance.tipo = Ambiente.Tipo.LABORATORIO
+        messages.success(self.request, "El laboratorio se registró correctamente.")
         return super().form_valid(form)
 
 
@@ -66,7 +67,7 @@ class EditarAmbienteView(AccesoUbicaciones, UpdateView):
     success_url = reverse_lazy("ubicaciones:lista")
 
     def form_valid(self, form):
-        messages.success(self.request, "El ambiente se actualizó correctamente.")
+        messages.success(self.request, "El laboratorio se actualizó correctamente.")
         return super().form_valid(form)
 
 
@@ -83,5 +84,5 @@ class DesactivarAmbienteView(AccesoUbicaciones, View):
         ambiente = get_object_or_404(Ambiente, pk=pk, activo=True)
         ambiente.activo = False
         ambiente.save(update_fields=["activo", "actualizado_en"])
-        messages.success(request, "El ambiente se desactivó sin borrar su historial.")
+        messages.success(request, "El laboratorio se desactivó sin borrar su historial.")
         return redirect("ubicaciones:lista")

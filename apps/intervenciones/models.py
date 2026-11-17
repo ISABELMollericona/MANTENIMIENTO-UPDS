@@ -1,28 +1,36 @@
-from decimal import Decimal
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import F, Sum
 from django.utils import timezone
 
 from apps.solicitudes.models import Solicitud
+from apps.ubicaciones.models import Ambiente
 
 
 class Intervencion(models.Model):
+    """Reparación (mantenimiento correctivo) originada por un reporte de falla."""
+
     class Resultado(models.TextChoices):
         REPARADO = "reparado", "Reparado"
-        PARCIAL = "parcial", "Parcial"
+        PARCIAL = "parcial", "Reparado parcialmente"
         NO_REPARABLE = "no_reparable", "No reparable"
 
-    solicitud = models.ForeignKey(Solicitud, verbose_name="Solicitud", on_delete=models.PROTECT, related_name="intervenciones")
+    solicitud = models.ForeignKey(Solicitud, verbose_name="Reporte de falla", on_delete=models.PROTECT, related_name="intervenciones")
     tecnico = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Técnico", on_delete=models.PROTECT, related_name="intervenciones_realizadas")
+    laboratorio_origen = models.ForeignKey(
+        Ambiente,
+        verbose_name="Laboratorio de origen",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reparaciones",
+        help_text="Laboratorio del que salió el equipo (se guarda aunque luego cambie de laboratorio).",
+    )
+    fecha_salida = models.DateField("Fecha de salida", default=timezone.localdate, db_index=True)
+    fecha_devolucion = models.DateField("Fecha de devolución", null=True, blank=True, db_index=True)
     diagnostico = models.TextField("Diagnóstico")
     trabajo_realizado = models.TextField("Trabajo realizado", blank=True)
-    fecha_inicio = models.DateTimeField("Fecha de inicio", default=timezone.now, db_index=True)
-    fecha_fin = models.DateTimeField("Fecha de fin", null=True, blank=True)
-    costo_mano_obra = models.DecimalField("Costo de mano de obra (Bs.)", max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))])
+    repuestos_usados = models.TextField("Repuestos usados", blank=True, help_text="Escribe los repuestos que se cambiaron, uno por línea.")
     resultado = models.CharField("Resultado", max_length=16, choices=Resultado.choices, blank=True)
     observaciones = models.TextField("Observaciones", blank=True)
     uuid_cliente = models.UUIDField("UUID del cliente", null=True, blank=True, unique=True, db_index=True)
@@ -33,40 +41,41 @@ class Intervencion(models.Model):
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Creado por", null=True, blank=True, on_delete=models.SET_NULL, related_name="intervenciones_creadas")
 
     class Meta:
-        verbose_name = "intervención"
-        verbose_name_plural = "intervenciones"
-        ordering = ["fecha_inicio", "pk"]
-        indexes = [models.Index(fields=["tecnico", "fecha_inicio"], name="int_tecnico_inicio_idx")]
+        verbose_name = "reparación"
+        verbose_name_plural = "reparaciones"
+        ordering = ["fecha_salida", "pk"]
+        indexes = [models.Index(fields=["tecnico", "fecha_salida"], name="rep_tecnico_salida_idx")]
 
     def __str__(self):
-        return f"Intervención #{self.pk} - {self.solicitud}"
+        return f"Reparación #{self.pk} - {self.solicitud.equipo.codigo}"
+
+    @property
+    def equipo(self):
+        return self.solicitud.equipo
+
+    @property
+    def terminada(self):
+        return self.fecha_devolucion is not None
+
+    @property
+    def dias_fuera(self):
+        """Días que el equipo estuvo (o lleva) fuera: devolución − salida."""
+        if not self.fecha_salida:
+            return None
+        fin = self.fecha_devolucion or timezone.localdate()
+        return (fin - self.fecha_salida).days
 
     def clean(self):
-        if self.fecha_fin and self.fecha_inicio and self.fecha_fin < self.fecha_inicio:
-            raise ValidationError({"fecha_fin": "La fecha de fin debe ser posterior al inicio."})
-        if self.fecha_fin and not self.resultado:
-            raise ValidationError({"resultado": "Selecciona un resultado para cerrar la intervención."})
-
-    @property
-    def costo_total(self):
-        repuestos = self.repuestos.aggregate(total=Sum(F("cantidad") * F("costo_unitario")))["total"] or Decimal("0.00")
-        return self.costo_mano_obra + repuestos
-
-
-class RepuestoUsado(models.Model):
-    intervencion = models.ForeignKey(Intervencion, verbose_name="Intervención", on_delete=models.PROTECT, related_name="repuestos")
-    descripcion = models.CharField("Descripción del repuesto", max_length=180)
-    cantidad = models.DecimalField("Cantidad", max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))])
-    costo_unitario = models.DecimalField("Costo unitario (Bs.)", max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
-
-    class Meta:
-        verbose_name = "repuesto usado"
-        verbose_name_plural = "repuestos usados"
-        ordering = ["pk"]
-
-    def __str__(self):
-        return f"{self.descripcion} x {self.cantidad}"
-
-    @property
-    def costo_total(self):
-        return self.cantidad * self.costo_unitario
+        errores = {}
+        if self.fecha_devolucion and self.fecha_salida and self.fecha_devolucion < self.fecha_salida:
+            errores["fecha_devolucion"] = "La fecha de devolución debe ser igual o posterior a la fecha de salida."
+        if self.fecha_salida and self.fecha_salida > timezone.localdate():
+            errores["fecha_salida"] = "La fecha de salida no puede ser futura."
+        if self.fecha_devolucion and self.fecha_devolucion > timezone.localdate():
+            errores["fecha_devolucion"] = "La fecha de devolución no puede ser futura."
+        if self.fecha_devolucion and not self.resultado:
+            errores["resultado"] = "Selecciona el resultado al registrar la devolución."
+        if self.resultado and not self.fecha_devolucion:
+            errores["fecha_devolucion"] = "Indica la fecha de devolución junto con el resultado."
+        if errores:
+            raise ValidationError(errores)

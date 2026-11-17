@@ -12,7 +12,7 @@ class HistorialSolicitudInline(admin.TabularInline):
 
 @admin.register(Solicitud)
 class SolicitudAdmin(admin.ModelAdmin):
-    list_display = ("id", "equipo", "prioridad", "estado", "solicitante", "tecnico_asignado", "fecha_reporte")
+    list_display = ("id", "equipo", "docente_solicitante", "estado", "solicitante", "tecnico_asignado", "fecha_reporte")
     list_filter = ("estado", "prioridad", "fecha_reporte", "equipo__ambiente")
-    search_fields = ("equipo__codigo", "descripcion", "solicitante__username")
+    search_fields = ("equipo__codigo", "descripcion", "docente_solicitante", "solicitante__username")
     inlines = [HistorialSolicitudInline]

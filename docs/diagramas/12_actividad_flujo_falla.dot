@@ -1,0 +1,63 @@
+// Actividad: de la falla detectada al reporte resuelto, con carriles por rol.
+// Los estados que registra el sistema aparecen a la derecha, a la altura de la acción que los produce.
+digraph actividad_falla {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.28, ranksep=0.26, newrank=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de actividad · flujo de un reporte de falla</B></FONT>>];
+  node  [fontname="Arial", fontsize=10, shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.1, margin="0.12,0.05"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", arrowsize=0.7];
+
+  subgraph cluster_docente { label=<<B>Docente</B>>; style="filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    inicio [label="", shape=circle, style=filled, fillcolor="#064B87", width=0.22, fixedsize=true];
+    detecta [label="Detecta la falla\ne informa al jefe"];
+  }
+  subgraph cluster_jefe { label=<<B>Jefe de carrera</B>>; style="filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    registra [label="Registra el reporte:\ndocente, equipo,\nproblema, prioridad"];
+    valido [label="¿Datos\nválidos?", shape=diamond, style=filled, fillcolor="#FFFFFF", margin="0.02,0.02"];
+    corrige [label="Corrige los\ncampos marcados"];
+  }
+  subgraph cluster_resp { label=<<B>Responsable</B>>; style="filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    revisa [label="Revisa los\nreportes pendientes"];
+    procede [label="¿Procede?", shape=diamond, style=filled, fillcolor="#FFFFFF", margin="0.02,0.02"];
+    cancela [label="Cancela\ncon motivo"];
+    asigna [label="Asigna un técnico"];
+    baja [label="Registra la baja e\ninforme a Vicerrectoría"];
+  }
+  subgraph cluster_tec { label=<<B>Técnico</B>>; style="filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    salida [label="Registra la salida:\nfecha y diagnóstico"];
+    repara [label="Registra trabajo,\nrepuestos, devolución\ny resultado"];
+    resultado [label="¿Resultado?", shape=diamond, style=filled, fillcolor="#FFFFFF", margin="0.02,0.02"];
+    fin [label="", shape=doublecircle, style=filled, fillcolor="#064B87", width=0.18, fixedsize=true];
+  }
+  subgraph cluster_sis { label=<<B>Estado en el sistema</B>>; style="filled"; fillcolor="#FFFFFF"; color="#9AB5CC"; fontcolor="#064B87";
+    node [fontsize=9.5, margin="0.08,0.03"];
+    s_reg [label="Registrada", fillcolor="#FDE6EA"];
+    s_can [label="Cancelada", fillcolor="#ECEFF2"];
+    s_asig [label="Asignada", fillcolor="#E6EFF8"];
+    s_rep [label="En reparación\nequipo: en reparación", fillcolor="#FFF4D1"];
+    s_ok [label="Resuelta\nequipo: Operativo", fillcolor="#E3F4EA"];
+    s_nr [label="Resuelta · equipo\nespera la baja", fillcolor="#ECEFF2"];
+  }
+
+  edge [style=dashed, arrowhead=none, color="#9AB5CC"];
+  { rank=same; valido; s_reg; } valido -> s_reg [constraint=false];
+  { rank=same; cancela; asigna; s_can; } asigna -> s_asig [constraint=false];
+  { rank=same; salida; s_asig; }
+  { rank=same; repara; s_rep; } salida -> s_rep [constraint=false];
+  { rank=same; resultado; s_ok; s_nr; }
+  cancela -> s_can [constraint=false];
+  resultado -> s_ok [constraint=false]; resultado -> s_nr [constraint=false];
+
+  edge [style=solid, arrowhead=normal, color="#4B6378"];
+  inicio -> detecta -> registra -> valido;
+  valido -> corrige [label=" no"];
+  corrige -> registra [constraint=false];
+  valido -> revisa [label=" sí"];
+  revisa -> procede;
+  procede -> cancela [label=" no"];
+  procede -> asigna [label=" sí"];
+  asigna -> salida -> repara -> resultado;
+  resultado -> fin [label=" reparado /\n parcial"];
+  resultado -> baja [label=" no reparable"];
+  baja -> fin;
+  cancela -> fin [style=dotted];
+}

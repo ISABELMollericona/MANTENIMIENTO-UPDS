@@ -34,6 +34,8 @@ main h1.h3 { font-weight: 600; }
 .kpi-card { position: relative; display: flex; align-items: center; gap: .95rem; height: 100%; padding: 1rem 1.1rem; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow-sm); transition: transform .15s ease, box-shadow .15s ease; }
 .kpi-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--kpi-color, var(--upds-blue)); }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+a.kpi-card { color: inherit; }
+a.kpi-card:focus-visible { outline: 3px solid rgb(6 75 135 / 35%); outline-offset: 2px; }
 .kpi-icon { display: grid; place-items: center; flex: 0 0 auto; width: 46px; height: 46px; border-radius: .6rem; background: var(--kpi-soft, var(--info-soft)); color: var(--kpi-color, var(--upds-blue)); font-size: 1.3rem; }
 .kpi-label { display: block; color: var(--muted); font-size: .8rem; font-weight: 600; }
 .kpi-value { display: block; color: var(--ink); font-size: 1.75rem; font-weight: 700; line-height: 1.15; }
@@ -111,3 +113,26 @@ main h1.h3 { font-weight: 600; }
   .kpi-value { font-size: 1.45rem; }
   .panel-card-header { padding: .75rem .9rem; }
 }
+
+/* Casillas: la etiqueta va al lado de la casilla, no debajo */
+.form-panel .form-check { display: flex; align-items: flex-start; gap: .5rem; padding-left: 0; }
+.form-panel .form-check .form-check-input { flex: 0 0 auto; margin: .2rem 0 0; float: none; }
+.form-panel .form-check-label { display: inline; margin-bottom: 0; font-weight: 500; }
+
+/* Campos sin clase de Bootstrap (formularios de contrasena de Django) */
+.form-panel input:not(.form-control):not(.form-check-input):not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]) { display: block; width: 100%; min-height: 40px; margin-top: .3rem; padding: .375rem .75rem; border: 1px solid #cbd5df; border-radius: .5rem; background: #fff; color: var(--ink); font-size: .92rem; }
+.form-panel input:not(.form-control):focus { outline: 0; border-color: #86a9c9; box-shadow: 0 0 0 .2rem rgb(6 75 135 / 18%); }
+.form-panel .helptext, .form-panel ul { color: var(--muted); font-size: .8rem; }
+.form-panel p { margin-bottom: 1rem; }
+
+/* Responsive: encabezados de tarjeta y etiquetas que se ajustan en pantallas angostas */
+.panel-card-header { flex-wrap: wrap; }
+.panel-card-header .pill, .panel-card-header h3 { white-space: normal; }
+@media (max-width: 575.98px) { .pill { white-space: normal; } }
+
+/* Responsive: textos largos de indicadores (p. ej. "En mantenimiento/reparación") se ajustan */
+.kpi-card > div { min-width: 0; }
+.kpi-label, .kpi-detail { overflow-wrap: break-word; }
+@media (max-width: 575.98px) { .kpi-card { gap: .55rem; padding: .8rem .7rem; } .kpi-icon { width: 34px; height: 34px; font-size: 1rem; } .kpi-label { font-size: .72rem; } }
+@media (max-width: 575.98px) { .kpi-compacto .kpi-icon { display: none; } .kpi-compacto .kpi-card { padding: .7rem .6rem; } .kpi-compacto .kpi-label { overflow-wrap: normal; } }
+@media (max-width: 575.98px) { .table-responsive > .table > :not(caption) > * > * { padding: .6rem .45rem; } .table-responsive .pill, .table-responsive .badge { font-size: .7rem; } }

@@ -1,0 +1,46 @@
+// Diagrama de despliegue: navegador, GitHub, Render y Neon.
+digraph despliegue {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.3, ranksep=0.45, newrank=true, compound=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de despliegue</B></FONT>>];
+  node  [fontname="Arial", fontsize=10.5, shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.2, margin="0.12,0.05"];
+  edge  [fontname="Arial", fontsize=9.5, color="#4B6378", fontcolor="#33475B", arrowsize=0.75];
+
+  subgraph cluster_usuario {
+    label=<<FONT POINT-SIZE="9.5">«dispositivo»</FONT><BR/><B>Computadora o celular</B>>; style="filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87"; penwidth=1.5;
+    navegador [label=<<B>Navegador web</B><BR/><FONT POINT-SIZE="9.5">Chrome · Edge · Firefox</FONT>>, fillcolor="#FFFFFF"];
+    sw [label=<<B>Service worker</B><BR/><FONT POINT-SIZE="9.5">caché de estáticos</FONT>>];
+  }
+
+  subgraph cluster_github {
+    label=<<FONT POINT-SIZE="9.5">«repositorio»</FONT><BR/><B>GitHub</B>>; style="filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87"; penwidth=1.5;
+    repo [label=<<B>MANTENIMIENTO-UPDS</B><BR/><FONT POINT-SIZE="9.5">rama main</FONT>>, fillcolor="#FFFFFF"];
+  }
+
+  subgraph cluster_render {
+    label=<<FONT POINT-SIZE="9.5">«servicio web»</FONT><BR/><B>Render · mantenimiento-upds.onrender.com</B>>; style="filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87"; penwidth=1.5;
+    build [label=<<B>Build</B><BR/><FONT POINT-SIZE="9.5">pip install · collectstatic<BR/>migrate</FONT>>];
+    gunicorn [label=<<B>gunicorn</B><BR/><FONT POINT-SIZE="9.5">mantenimiento.wsgi</FONT>>, fillcolor="#FFFFFF"];
+    django [label=<<B>Django 5.2 + WhiteNoise</B><BR/><FONT POINT-SIZE="9.5">DEBUG=False · HTTPS · HSTS</FONT>>, fillcolor="#DCE9F5"];
+    env [label=<<B>Variables de entorno</B><BR/><FONT POINT-SIZE="9.5">DATABASE_URL · SECRET_KEY<BR/>ALLOWED_HOSTS · CSRF_TRUSTED_ORIGINS</FONT>>, shape=note, style="filled", fillcolor="#FFF8E1", color="#E0A800"];
+    salud [label=<<B>Health check</B><BR/><FONT POINT-SIZE="9.5">GET /api/salud/</FONT>>, shape=box, style="rounded,dashed,filled", fillcolor="#FFFFFF"];
+  }
+
+  subgraph cluster_neon {
+    label=<<FONT POINT-SIZE="9.5">«base de datos»</FONT><BR/><B>Neon · PostgreSQL serverless</B>>; labelloc=b; style="filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87"; penwidth=1.5;
+    pooler [label=<<B>Pooler (PgBouncer)</B><BR/><FONT POINT-SIZE="9.5">host «-pooler»</FONT>>];
+    pg [label=<<B>PostgreSQL</B><BR/><FONT POINT-SIZE="9.5">base neondb</FONT>>, shape=cylinder, style="filled", fillcolor="#FFFFFF"];
+  }
+
+  { rank=same; navegador; repo; }
+  { rank=same; build; env; }
+
+  sw -> navegador [dir=both, style=dashed];
+  navegador -> gunicorn [label=" HTTPS :443"];
+  repo -> build [label=" push a main:\n despliegue automático"];
+  build -> gunicorn [style=dashed, label=" publica"];
+  gunicorn -> django;
+  env -> django [style=dashed, arrowhead=vee, label=" configura"];
+  salud -> django [style=dashed, arrowhead=vee, dir=back];
+  django -> pooler [label=" TLS :5432 · sslmode=require"];
+  pooler -> pg;
+}

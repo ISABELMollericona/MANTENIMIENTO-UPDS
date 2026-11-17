@@ -11,7 +11,7 @@ class Ambiente(models.Model):
         OTRO = "otro", "Otro"
 
     nombre = models.CharField("Nombre", max_length=140)
-    tipo = models.CharField("Tipo", max_length=24, choices=Tipo.choices, db_index=True)
+    tipo = models.CharField("Tipo", max_length=24, choices=Tipo.choices, default=Tipo.LABORATORIO, db_index=True)
     bloque = models.CharField("Bloque o edificio", max_length=120, db_index=True)
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Responsable", null=True, blank=True, on_delete=models.SET_NULL, related_name="ambientes_responsable")
     activo = models.BooleanField("Activo", default=True, db_index=True)
@@ -20,10 +20,15 @@ class Ambiente(models.Model):
     creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Creado por", null=True, blank=True, on_delete=models.SET_NULL, related_name="ambientes_creados")
 
     class Meta:
-        verbose_name = "ambiente"
-        verbose_name_plural = "ambientes"
+        verbose_name = "laboratorio"
+        verbose_name_plural = "laboratorios"
         ordering = ["bloque", "nombre"]
         indexes = [models.Index(fields=["tipo", "bloque", "activo"], name="amb_tipo_bloque_act_idx")]
 
     def __str__(self):
         return f"{self.nombre} ({self.bloque})"
+
+    @classmethod
+    def laboratorios(cls):
+        """Laboratorios activos: el sistema solo cubre los laboratorios de computación."""
+        return cls.objects.filter(activo=True, tipo=cls.Tipo.LABORATORIO).order_by("bloque", "nombre")

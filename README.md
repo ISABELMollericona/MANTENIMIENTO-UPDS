@@ -27,8 +27,8 @@ Configura `SECRET_KEY`, `DEBUG` y `ALLOWED_HOSTS` en `.env`. Para Neon, agrega l
 
 - `python manage.py test`: ejecutar pruebas.
 - `python manage.py createsuperuser`: crear la primera cuenta administradora.
-- `python manage.py seed_roles`: crear roles iniciales, asignar el rol Administrador a superusuarios y poder editarlos luego desde la interfaz.
-- `python manage.py seed_demo`: cargar datos ficticios idempotentes (8 ambientes, 5 categorías, 40 equipos, 25 solicitudes, intervenciones, planes y programaciones).
+- `python manage.py seed_roles`: crear los roles acordados (Administrador, Responsable de mantenimiento, Técnico, Jefe de carrera, Estudiante). Con `--actualizar-permisos` deja cada rol con sus permisos acordados.
+- `python manage.py seed_demo`: cargar datos ficticios idempotentes (3 laboratorios de computación, 12 computadoras con teclado y mouse, reportes de falla, reparaciones y cronograma preventivo).
 
 ## Cuentas y roles
 
@@ -36,11 +36,11 @@ Los roles usan los modelos nativos `Group` y `Permission` de Django. Crea el usu
 
 `seed_demo` crea estas cuentas para pruebas locales, todas con `Demo-UPDS-2026!` por defecto y cambio obligatorio de contraseña al primer acceso:
 
-- `admin.demo`
-- `responsable.demo`
-- `tecnico.demo`
-- `docente.demo`
-- `autoridad.demo`
+- `admin.demo` (Administrador)
+- `responsable.demo` (Responsable de mantenimiento)
+- `tecnico.demo` (Técnico)
+- `jefe.demo` (Jefe de carrera)
+- `estudiante.demo` (Estudiante)
 
 Puedes cambiar la contraseña compartida estableciendo `DEMO_PASSWORD` antes de ejecutar el comando. Estas cuentas y claves son solo para desarrollo; no las uses en producción.
 

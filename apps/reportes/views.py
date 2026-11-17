@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.shortcuts import render
 from django.views import View
 
-from apps.equipos.models import CategoriaEquipo
+from apps.equipos.models import CategoriaEquipo, Equipo
 from apps.ubicaciones.models import Ambiente
 
 from .exports import exportar_excel, exportar_pdf
@@ -32,8 +32,9 @@ class ReportesView(LoginRequiredMixin, PermissionRequiredMixin, View):
         return render(request, "reportes/lista.html", {
             "reporte": reporte,
             "reportes": DEFINICIONES_REPORTES,
-            "ambientes": Ambiente.objects.filter(activo=True).order_by("bloque", "nombre"),
+            "ambientes": Ambiente.laboratorios(),
             "categorias": CategoriaEquipo.objects.filter(activo=True).order_by("nombre"),
+            "equipos": Equipo.objects.select_related("categoria").order_by("codigo"),
             "puede_exportar": request.user.has_perm("cuentas.exportar_reportes"),
             "filtros": request.GET,
         })

@@ -1,97 +1,77 @@
-from datetime import date, timedelta
+from datetime import date
 
-from django.contrib.auth.models import Permission
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.cuentas.models import Rol, Usuario
-from apps.equipos.models import CategoriaEquipo, Equipo
 from apps.ubicaciones.models import Ambiente
 
-from .forms import MantenimientoProgramadoForm
-from .models import MantenimientoProgramado, PlanPreventivo
-from .services import agregar_meses, completar_mantenimiento
+from .models import MantenimientoPreventivo
 
 
-class PreventivoTests(TestCase):
+class CronogramaPreventivoTests(TestCase):
     def setUp(self):
         call_command("seed_roles", verbosity=0)
-        self.rol = Rol.objects.get(nombre="Responsable de equipamiento")
-        self.rol.grupo.permissions.add(*Permission.objects.filter(content_type__app_label="cuentas", codename__in=["ver_preventivos", "crear_preventivos", "editar_preventivos"]))
-        self.usuario = Usuario.objects.create_user(username="responsable", password="Clave-Segura-2026!")
-        self.usuario.groups.add(self.rol.grupo)
-        ambiente = Ambiente.objects.create(nombre="Laboratorio", tipo="laboratorio", bloque="A")
-        self.categoria = CategoriaEquipo.objects.create(nombre="Proyector")
-        self.equipo = Equipo.objects.create(codigo="EQ-001", categoria=self.categoria, ambiente=ambiente)
-        self.plan = PlanPreventivo.objects.create(categoria=self.categoria, nombre="Limpieza semestral", periodicidad_meses=6, actividades="Limpiar filtros y verificar lámpara.", creado_por=self.usuario)
-        self.programado = MantenimientoProgramado.objects.create(equipo=self.equipo, plan=self.plan, fecha_programada=timezone.localdate() - timedelta(days=1), creado_por=self.usuario)
-        self.client.force_login(self.usuario)
+        self.responsable = Usuario.objects.create_user(username="responsable", password="Clave-Segura-2026!")
+        self.responsable.groups.add(Rol.objects.get(nombre="Responsable de mantenimiento").grupo)
+        self.tecnico = Usuario.objects.create_user(username="tecnico", password="Clave-Segura-2026!")
+        self.tecnico.groups.add(Rol.objects.get(nombre="Técnico").grupo)
+        self.otro_tecnico = Usuario.objects.create_user(username="tecnico2", password="Clave-Segura-2026!")
+        self.otro_tecnico.groups.add(Rol.objects.get(nombre="Técnico").grupo)
+        self.lab = Ambiente.objects.create(nombre="Laboratorio 1", tipo="laboratorio", bloque="A")
+        self.anio = timezone.localdate().year
 
-    def test_agregar_meses_ajusta_fin_de_mes_y_anio_bisiesto(self):
-        self.assertEqual(agregar_meses(date(2024, 1, 31), 1), date(2024, 2, 29))
-        self.assertEqual(agregar_meses(date(2025, 1, 31), 1), date(2025, 2, 28))
-        self.assertEqual(agregar_meses(date(2026, 11, 30), 4), date(2027, 3, 30))
+    def _cargar(self, **extra):
+        datos = {"laboratorio": self.lab.pk, "anio": self.anio, "fecha_1": f"{self.anio}-02-10", "fecha_2": f"{self.anio}-07-10", "fecha_3": "", "tecnico": self.tecnico.pk}
+        datos.update(extra)
+        return self.client.post(reverse("preventivo:cargar"), datos)
 
-    def test_vencido_se_calcula_solo_para_pendientes_con_fecha_pasada(self):
-        self.assertTrue(self.programado.vencido)
-        futuro = MantenimientoProgramado.objects.create(equipo=self.equipo, plan=self.plan, fecha_programada=timezone.localdate() + timedelta(days=1))
-        self.assertFalse(futuro.vencido)
-        self.programado.estado = MantenimientoProgramado.Estado.REALIZADO
-        self.assertFalse(self.programado.vencido)
+    def test_responsable_carga_cronograma_anual_con_2_o_3_mantenimientos(self):
+        self.client.force_login(self.responsable)
+        self.assertEqual(self._cargar().status_code, 302)
+        self.assertEqual(MantenimientoPreventivo.objects.filter(laboratorio=self.lab, anio=self.anio).count(), 2)
+        self._cargar(fecha_3=f"{self.anio}-11-10")
+        self.assertEqual(list(MantenimientoPreventivo.objects.filter(laboratorio=self.lab, anio=self.anio).values_list("numero", flat=True)), [1, 2, 3])
 
-    def test_completar_programacion_crea_siguiente_segun_periodicidad(self):
-        realizado, siguiente = completar_mantenimiento(self.programado, self.usuario)
-        self.assertEqual(realizado.estado, MantenimientoProgramado.Estado.REALIZADO)
-        self.assertEqual(realizado.fecha_realizada, timezone.localdate())
-        self.assertEqual(siguiente.fecha_programada, agregar_meses(realizado.fecha_realizada, 6))
-        self.assertEqual(MantenimientoProgramado.objects.filter(equipo=self.equipo, plan=self.plan).count(), 2)
+    def test_fechas_deben_ser_del_anio_y_en_orden(self):
+        self.client.force_login(self.responsable)
+        respuesta = self._cargar(fecha_1=f"{self.anio + 1}-01-10", fecha_2=f"{self.anio}-01-01")
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertIn("fecha_1", respuesta.context["form"].errors)
+        respuesta = self._cargar(fecha_1=f"{self.anio}-08-10", fecha_2=f"{self.anio}-03-10")
+        self.assertIn("fecha_2", respuesta.context["form"].errors)
+        respuesta = self._cargar(fecha_2="")
+        self.assertIn("fecha_2", respuesta.context["form"].errors)
+        self.assertFalse(MantenimientoPreventivo.objects.exists())
 
-    def test_completar_dos_veces_no_duplica_el_siguiente(self):
-        completar_mantenimiento(self.programado, self.usuario)
-        _, siguiente = completar_mantenimiento(self.programado, self.usuario)
-        self.assertIsNone(siguiente)
-        self.assertEqual(MantenimientoProgramado.objects.filter(equipo=self.equipo, plan=self.plan).count(), 2)
+    def test_marcar_realizado_y_volver_a_pendiente(self):
+        mantenimiento = MantenimientoPreventivo.objects.create(laboratorio=self.lab, anio=self.anio, numero=1, fecha_programada=date(self.anio, 1, 15), tecnico=self.tecnico)
+        self.client.force_login(self.tecnico)
+        respuesta = self.client.post(reverse("preventivo:marcar", args=[mantenimiento.pk]), {"fecha_realizada": timezone.localdate().isoformat(), "observaciones": "Limpieza"})
+        self.assertEqual(respuesta.status_code, 302)
+        mantenimiento.refresh_from_db()
+        self.assertEqual(mantenimiento.estado, MantenimientoPreventivo.Estado.REALIZADO)
+        self.client.post(reverse("preventivo:pendiente", args=[mantenimiento.pk]))
+        mantenimiento.refresh_from_db()
+        self.assertEqual((mantenimiento.estado, mantenimiento.fecha_realizada), (MantenimientoPreventivo.Estado.PENDIENTE, None))
 
-    def test_lista_muestra_vencidos_y_permite_confirmar_realizacion(self):
-        respuesta = self.client.get(reverse("preventivo:programaciones"))
-        self.assertContains(respuesta, "Vencido")
-        self.assertContains(respuesta, "EQ-001")
-        respuesta = self.client.post(reverse("preventivo:completar", args=[self.programado.pk]))
-        self.assertRedirects(respuesta, reverse("preventivo:programaciones"))
-        self.assertEqual(MantenimientoProgramado.objects.filter(equipo=self.equipo, plan=self.plan).count(), 2)
+    def test_tecnico_solo_ve_y_marca_sus_mantenimientos(self):
+        propio = MantenimientoPreventivo.objects.create(laboratorio=self.lab, anio=self.anio, numero=1, fecha_programada=date(self.anio, 3, 1), tecnico=self.tecnico)
+        ajeno = MantenimientoPreventivo.objects.create(laboratorio=self.lab, anio=self.anio, numero=2, fecha_programada=date(self.anio, 9, 1), tecnico=self.otro_tecnico)
+        self.client.force_login(self.tecnico)
+        respuesta = self.client.get(reverse("preventivo:cronograma"))
+        celdas = [m for fila in respuesta.context["filas"] for m in fila["celdas"] if m]
+        self.assertEqual(celdas, [propio])
+        self.assertEqual(self.client.post(reverse("preventivo:marcar", args=[ajeno.pk]), {"fecha_realizada": timezone.localdate().isoformat()}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("preventivo:cargar")).status_code, 403)
 
-    def test_plan_no_se_puede_asignar_a_otra_categoria(self):
-        otra_categoria = CategoriaEquipo.objects.create(nombre="Impresora")
-        otro_equipo = Equipo.objects.create(codigo="EQ-002", categoria=otra_categoria)
-        formulario = MantenimientoProgramadoForm(data={
-            "equipo": otro_equipo.pk,
-            "plan": self.plan.pk,
-            "fecha_programada": timezone.localdate().isoformat(),
-            "tecnico": "",
-            "observaciones": "",
-        })
-        self.assertFalse(formulario.is_valid())
-        self.assertIn("El plan debe corresponder a la categoría del equipo.", str(formulario.errors))
-
-    def test_plan_se_crea_edita_y_desactiva_sin_borrarlo(self):
-        respuesta = self.client.post(reverse("preventivo:plan_crear"), {
-            "categoria": self.categoria.pk,
-            "nombre": "Revisión eléctrica",
-            "periodicidad_meses": 12,
-            "actividades": "Revisar conectores y cableado.",
-            "activo": "on",
-        })
-        self.assertRedirects(respuesta, reverse("preventivo:planes"))
-        plan = PlanPreventivo.objects.get(nombre="Revisión eléctrica")
-        respuesta = self.client.post(reverse("preventivo:plan_editar", args=[plan.pk]), {
-            "categoria": self.categoria.pk,
-            "nombre": plan.nombre,
-            "periodicidad_meses": 12,
-            "actividades": "Revisar conectores y cableado.",
-        })
-        self.assertRedirects(respuesta, reverse("preventivo:planes"))
-        plan.refresh_from_db()
-        self.assertFalse(plan.activo)
-        self.assertTrue(PlanPreventivo.objects.filter(pk=plan.pk).exists())
+    def test_no_se_puede_marcar_realizado_en_fecha_futura(self):
+        mantenimiento = MantenimientoPreventivo.objects.create(laboratorio=self.lab, anio=self.anio, numero=1, fecha_programada=date(self.anio, 1, 15))
+        self.client.force_login(self.responsable)
+        manana = timezone.localdate().replace(year=self.anio + 1).isoformat()
+        respuesta = self.client.post(reverse("preventivo:marcar", args=[mantenimiento.pk]), {"fecha_realizada": manana})
+        self.assertEqual(respuesta.status_code, 200)
+        mantenimiento.refresh_from_db()
+        self.assertEqual(mantenimiento.estado, MantenimientoPreventivo.Estado.PENDIENTE)

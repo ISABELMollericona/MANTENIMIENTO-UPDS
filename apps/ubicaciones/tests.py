@@ -10,7 +10,7 @@ from .models import Ambiente
 class AmbientesTests(TestCase):
     def setUp(self):
         call_command("seed_roles", verbosity=0)
-        self.rol = Rol.objects.get(nombre="Responsable de equipamiento")
+        self.rol = Rol.objects.get(nombre="Responsable de mantenimiento")
         self.rol.grupo.permissions.add(*Permission.objects.filter(content_type__app_label="cuentas", codename__in=["ver_ambientes", "crear_ambientes", "editar_ambientes", "dar_baja_ambientes"]))
         self.usuario = Usuario.objects.create_user(username="responsable", password="Clave-Segura-2026!")
         self.usuario.groups.add(self.rol.grupo)

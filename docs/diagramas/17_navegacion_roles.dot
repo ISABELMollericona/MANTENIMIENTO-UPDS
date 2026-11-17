@@ -1,0 +1,46 @@
+// Mapa de navegación: pantallas del menú según el rol.
+digraph navegacion {
+  graph [rankdir=LR, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.12, ranksep=0.45, newrank=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Mapa de navegación por rol</B></FONT>>];
+  node  [fontname="Arial", fontsize=9.5, shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.1, margin="0.1,0.03"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", arrowsize=0.6];
+
+  login [label="Iniciar sesión", fillcolor="#FFFFFF"];
+  clave [label="Cambiar contraseña\n(obligatorio en el\nprimer ingreso)", fillcolor="#FFF8E1", color="#E0A800"];
+  inicio [label="Inicio\npanel o accesos", fillcolor="#DCE9F5"];
+  login -> clave [style=dashed]; clave -> inicio; login -> inicio;
+
+  subgraph cluster_admin { label=<<B>Administrador</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    usuarios [label="Usuarios\nlista · nuevo · editar"];
+    roles [label="Roles y permisos\nlista · nuevo · editar · eliminar"];
+    todo [label="+ todas las pantallas\ndel responsable", fillcolor="#FFFFFF", style="rounded,dashed,filled"];
+  }
+  subgraph cluster_resp { label=<<B>Responsable de mantenimiento</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    labs [label="Laboratorios\nlista · nuevo · editar · desactivar"];
+    equipos [label="Equipos\nlista · nuevo · ficha · editar\nagregar periférico · registrar baja"];
+    bajas [label="Bajas\ninforme a Vicerrectoría"];
+    catest [label="Categorías · Estados"];
+    reportesf [label="Reportes de falla\ntodos · asignar técnico · estado"];
+    prevr [label="Preventivo\ncronograma · cargar · marcar"];
+    reportes [label="Reportes (7)\nExcel · PDF"];
+  }
+  subgraph cluster_tec { label=<<B>Técnico</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    tareas [label="Mis tareas\nsalida · devolución · marcar preventivo"];
+    rft [label="Reportes de falla\nsolo los asignados"];
+    prevt [label="Preventivo\nsolo los propios"];
+  }
+  subgraph cluster_jefe { label=<<B>Jefe de carrera</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    reportar [label="Reportar una falla"];
+    misrep [label="Mis reportes de falla\ndetalle · cancelar"];
+  }
+  subgraph cluster_est { label=<<B>Estudiante</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    consulta [label="Equipos\nlista y ficha (solo consulta)"];
+  }
+
+  inicio -> usuarios; inicio -> roles; inicio -> todo;
+  inicio -> labs; inicio -> equipos; inicio -> reportesf; inicio -> prevr; inicio -> reportes;
+  equipos -> bajas; equipos -> catest;
+  inicio -> tareas; inicio -> rft; inicio -> prevt;
+  inicio -> reportar; inicio -> misrep;
+  inicio -> consulta;
+}

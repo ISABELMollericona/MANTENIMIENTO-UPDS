@@ -1,0 +1,37 @@
+// Componentes (apps de Django) y sus dependencias reales (imports).
+digraph componentes {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.25, nodesep=0.35, ranksep=0.5, newrank=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Componentes del sistema (apps de Django)</B></FONT>>];
+  node  [fontname="Arial", fontsize=10.5, shape=component, style="filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.2, margin="0.16,0.07"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", style=dashed, arrowhead=vee, arrowsize=0.8];
+
+  subgraph cluster_proyecto {
+    label=<<B>mantenimiento (proyecto)</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87";
+    config [label=<<B>settings · urls</B><BR/><FONT POINT-SIZE="9">configuración y rutas</FONT>>, fillcolor="#FFFFFF"];
+    resiliencia [label=<<B>db_resiliencia</B><BR/><FONT POINT-SIZE="9">reintento GET · /api/salud/</FONT>>];
+    offlinec [label=<<B>offline</B><BR/><FONT POINT-SIZE="9">catálogos y sincronización</FONT>>];
+  }
+
+  panel [label=<<B>panel</B><BR/><FONT POINT-SIZE="9">inicio e indicadores</FONT>>];
+  reportes [label=<<B>reportes</B><BR/><FONT POINT-SIZE="9">7 reportes · Excel · PDF</FONT>>];
+  intervenciones [label=<<B>intervenciones</B><BR/><FONT POINT-SIZE="9">reparaciones · mis tareas</FONT>>];
+  preventivo [label=<<B>preventivo</B><BR/><FONT POINT-SIZE="9">cronograma anual</FONT>>];
+  solicitudes [label=<<B>solicitudes</B><BR/><FONT POINT-SIZE="9">reportes de falla · servicios</FONT>>];
+  equipos [label=<<B>equipos</B><BR/><FONT POINT-SIZE="9">equipos · periféricos · estados · bajas</FONT>>];
+  ubicaciones [label=<<B>ubicaciones</B><BR/><FONT POINT-SIZE="9">laboratorios</FONT>>];
+  cuentas [label=<<B>cuentas</B><BR/><FONT POINT-SIZE="9">usuarios · roles · permisos · auditoría</FONT>>, fillcolor="#DCE9F5"];
+
+  { rank=same; panel; reportes; offlinec; }
+  { rank=same; intervenciones; preventivo; }
+
+  config -> panel;
+  offlinec -> solicitudes; offlinec -> intervenciones; offlinec -> preventivo; offlinec -> equipos;
+  panel -> solicitudes; panel -> preventivo; panel -> equipos;
+  reportes -> intervenciones; reportes -> preventivo; reportes -> solicitudes; reportes -> equipos;
+  intervenciones -> solicitudes; intervenciones -> preventivo [label=" Mis tareas"]; intervenciones -> ubicaciones [label=" laboratorio\n de origen"];
+  preventivo -> ubicaciones; preventivo -> cuentas;
+  solicitudes -> equipos; solicitudes -> cuentas [label=" auditoría"];
+  equipos -> ubicaciones; equipos -> cuentas;
+  ubicaciones -> cuentas;
+  resiliencia -> config [dir=back, style=dotted];
+}

@@ -1,0 +1,27 @@
+// Estados del reporte de falla (TRANSICIONES_PERMITIDAS en solicitudes/services.py).
+digraph estados_reporte {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.5, ranksep=0.45, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de estados · reporte de falla</B></FONT>>];
+  node  [fontname="Arial", fontsize=10.5, shape=box, style="rounded,filled", color="#064B87", penwidth=1.3, margin="0.18,0.08"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", arrowsize=0.75];
+
+  inicio [label="", shape=circle, style=filled, fillcolor="#064B87", width=0.22, fixedsize=true];
+  registrada [label="Registrada", fillcolor="#FDE6EA"];
+  asignada [label="Asignada", fillcolor="#E6EFF8"];
+  reparacion [label="En reparación", fillcolor="#FFF4D1"];
+  resuelta [label="Resuelta", fillcolor="#E3F4EA"];
+  cancelada [label="Cancelada", fillcolor="#ECEFF2"];
+
+  inicio -> registrada [label=" el jefe de carrera\n registra el reporte"];
+  registrada -> asignada [label=" el responsable\n asigna técnico"];
+  asignada -> reparacion [label=" el técnico registra\n la salida"];
+  reparacion -> resuelta [label=" el técnico registra\n la devolución"];
+  registrada -> cancelada [label=" cancelar con motivo\n (jefe: propios; responsable)"];
+  asignada -> cancelada [label=" cancelar\n con motivo"];
+  reparacion -> cancelada [label=" cancelar\n con motivo"];
+  resuelta -> registrada [label=" reabrir\n (permiso reabrir_solicitud)", style=dashed, constraint=false];
+  cancelada -> registrada [label=" reabrir", style=dashed, constraint=false];
+
+  nota [label="Cada cambio queda en HistorialSolicitud\n(estado anterior, nuevo, usuario, fecha y comentario).\nNo se puede resolver si el equipo sigue fuera.", shape=note, style=filled, fillcolor="#FFF8E1", color="#E0A800", fontsize=9.5];
+  { rank=same; cancelada; nota; }
+}

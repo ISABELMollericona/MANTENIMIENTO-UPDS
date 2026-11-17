@@ -1,0 +1,49 @@
+// Arquitectura por capas (patrón MVT de Django).
+digraph arquitectura {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.22, ranksep=0.38, newrank=true, compound=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Arquitectura del sistema · patrón MVT de Django</B></FONT>>];
+  node  [fontname="Arial", fontsize=10.5, shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.2, margin="0.12,0.05"];
+  edge  [fontname="Arial", fontsize=9.5, color="#4B6378", fontcolor="#33475B", arrowsize=0.75];
+
+  subgraph cluster_cliente {
+    label=<<B>Cliente · navegador web (PWA)</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87"; fontsize=12;
+    navegador [label=<<B>Navegador</B><BR/><FONT POINT-SIZE="9.5">HTML · Bootstrap 5.3.3<BR/>Bootstrap Icons · Chart.js 4.4.7</FONT>>, fillcolor="#FFFFFF"];
+    offline [label=<<B>offline.js</B><BR/><FONT POINT-SIZE="9.5">cola sin conexión<BR/>keep-alive</FONT>>];
+    sw [label=<<B>Service worker</B><BR/><FONT POINT-SIZE="9.5">páginas: red primero<BR/>estáticos: caché</FONT>>];
+  }
+
+  subgraph cluster_servidor {
+    label=<<B>Servidor web en Render · gunicorn (WSGI) · Django 5.2</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87"; fontsize=12;
+    middleware [label=<<B>Middleware</B><BR/><FONT POINT-SIZE="9.5">reintento BD · HTTPS · WhiteNoise · sesión · CSRF<BR/>autenticación · cambio de contraseña obligatorio</FONT>>];
+    urls [label=<<B>URLs</B><BR/><FONT POINT-SIZE="9.5">mantenimiento/urls.py + urls.py de cada app</FONT>>];
+    vistas [label=<<B>Vistas (View)</B><BR/><FONT POINT-SIZE="9.5">sesión obligatoria + permiso del rol</FONT>>, fillcolor="#DCE9F5"];
+    formularios [label=<<B>Formularios</B><BR/><FONT POINT-SIZE="9.5">validaciones</FONT>>];
+    servicios [label=<<B>Servicios</B><BR/><FONT POINT-SIZE="9.5">cambiar_estado<BR/>asignar_tecnico</FONT>>];
+    plantillas [label=<<B>Plantillas</B><BR/><FONT POINT-SIZE="9.5">(Template) HTML</FONT>>];
+    exportacion [label=<<B>Exportación</B><BR/><FONT POINT-SIZE="9.5">Excel · PDF</FONT>>];
+    api [label=<<B>API JSON</B><BR/><FONT POINT-SIZE="9.5">salud · offline</FONT>>];
+    modelos [label=<<B>Modelos (Model)</B><BR/><FONT POINT-SIZE="9.5">ORM de Django</FONT>>, fillcolor="#DCE9F5"];
+  }
+
+  bd [label=<<B>PostgreSQL · Neon</B><BR/><FONT POINT-SIZE="9.5">pooler · SSL obligatorio</FONT>>, shape=cylinder, style="filled", fillcolor="#FFFFFF"];
+
+  { rank=same; offline; sw; }
+  { rank=same; formularios; servicios; plantillas; exportacion; api; }
+
+  navegador -> sw [label=" peticiones", style=dashed];
+  navegador -> offline [dir=none, style=dotted];
+  sw -> middleware [label=" HTTPS"];
+  offline -> api [style=dashed, label=" sincroniza (JSON)", constraint=false];
+  middleware -> urls -> vistas;
+  vistas -> formularios;
+  vistas -> servicios;
+  vistas -> plantillas;
+  vistas -> exportacion;
+  vistas -> api [style=dashed];
+  formularios -> modelos;
+  servicios -> modelos;
+  exportacion -> modelos [style=dashed];
+  api -> modelos [style=dashed];
+  plantillas -> modelos [style=invis];
+  modelos -> bd [label=" psycopg 3\n CONN_HEALTH_CHECKS"];
+}

@@ -12,7 +12,7 @@ class CuentasBaseTestCase(TestCase):
     def setUp(self):
         call_command("seed_roles", verbosity=0)
         self.rol_admin = Rol.objects.get(nombre="Administrador")
-        self.rol_solicitante = Rol.objects.get(nombre="Solicitante")
+        self.rol_solicitante = Rol.objects.get(nombre="Jefe de carrera")
 
     def crear_usuario(self, nombre, rol=None, **datos):
         usuario = Usuario.objects.create_user(
@@ -133,7 +133,7 @@ class UsuariosYProteccionesTests(CuentasBaseTestCase):
         self.assertEqual(self.client.get(reverse("panel")).status_code, 200)
 
     def test_asignar_rol_a_usuario_se_audita(self):
-        rol_gestor = Rol.objects.get(nombre="Responsable de equipamiento")
+        rol_gestor = Rol.objects.get(nombre="Responsable de mantenimiento")
         self.asignar_permisos(rol_gestor, "ver_usuarios", "editar_usuarios", "gestionar_usuarios")
         gestor = self.crear_usuario("gestor", rol_gestor)
         usuario = self.crear_usuario("docente")
@@ -155,7 +155,7 @@ class UsuariosYProteccionesTests(CuentasBaseTestCase):
         self.assertIn(self.rol_solicitante.grupo, usuario.groups.all())
         evento = AuditoriaSeguridad.objects.get(accion="usuario_actualizado")
         self.assertEqual(evento.usuario, gestor)
-        self.assertIn("Solicitante", evento.detalle)
+        self.assertIn("Jefe de carrera", evento.detalle)
 
 
 class VistasRolesTests(CuentasBaseTestCase):
@@ -166,7 +166,7 @@ class VistasRolesTests(CuentasBaseTestCase):
         self.assertEqual(respuesta.status_code, 403)
 
     def test_usuario_con_permiso_ve_matriz_y_crea_rol_con_auditoria(self):
-        rol_gestor = Rol.objects.get(nombre="Responsable de equipamiento")
+        rol_gestor = Rol.objects.get(nombre="Responsable de mantenimiento")
         self.asignar_permisos(rol_gestor, "ver_roles", "crear_roles", "gestionar_roles")
         gestor = self.crear_usuario("gestor_roles", rol_gestor)
         self.client.force_login(gestor)
@@ -200,17 +200,16 @@ class VistasRolesTests(CuentasBaseTestCase):
 
 
 class SeedDemoCommandTests(TestCase):
-    def test_seed_demo_es_idempotente_y_crea_volumen_solicitado(self):
+    def test_seed_demo_es_idempotente_y_respeta_el_alcance(self):
         import os
 
         from django.contrib.auth import get_user_model
         from django.core.management import call_command
-        from django.utils import timezone
 
-        from apps.cuentas.management.commands.seed_demo import AMBIENTES
+        from apps.cuentas.management.commands.seed_demo import LABORATORIOS, USUARIOS
         from apps.equipos.models import Equipo
-        from apps.intervenciones.models import Intervencion, RepuestoUsado
-        from apps.preventivo.models import MantenimientoProgramado, PlanPreventivo
+        from apps.intervenciones.models import Intervencion
+        from apps.preventivo.models import MantenimientoPreventivo
         from apps.solicitudes.models import Solicitud
         from apps.ubicaciones.models import Ambiente
 
@@ -220,21 +219,17 @@ class SeedDemoCommandTests(TestCase):
         self.assertTrue(administrador.is_superuser)
         self.assertTrue(administrador.check_password(password))
         self.assertTrue(administrador.force_password_change)
-        self.assertEqual(Ambiente.objects.filter(nombre__in=[nombre for nombre, _, _ in AMBIENTES]).count(), 8)
-        self.assertEqual(Equipo.objects.filter(codigo__startswith="DEMO-").count(), 40)
-        self.assertEqual(Solicitud.objects.filter(descripcion__startswith="Solicitud ficticia").count(), 25)
-        self.assertGreater(Intervencion.objects.count(), 0)
-        self.assertGreater(RepuestoUsado.objects.count(), 0)
-        self.assertGreater(PlanPreventivo.objects.count(), 0)
-        self.assertTrue(MantenimientoProgramado.objects.filter(fecha_programada__lt=timezone.localdate(), estado="pendiente").exists())
+        for username, _, _, rol, _ in USUARIOS:
+            self.assertTrue(get_user_model().objects.get(username=username).groups.filter(name=rol).exists())
+        self.assertEqual(Ambiente.objects.filter(nombre__in=[nombre for nombre, _ in LABORATORIOS], tipo="laboratorio").count(), 3)
+        # Solo computadoras con su teclado y mouse.
+        self.assertEqual(Equipo.objects.filter(codigo__startswith="LAB").count(), 36)
+        self.assertEqual(set(Equipo.objects.values_list("categoria__nombre", flat=True)), {"Computadora", "Teclado", "Mouse"})
+        self.assertFalse(Solicitud.objects.filter(docente_solicitante="").exists())
+        self.assertGreater(Intervencion.objects.filter(fecha_devolucion__isnull=False).count(), 0)
+        self.assertGreater(MantenimientoPreventivo.objects.count(), 0)
 
-        conteos_antes = (
-            Ambiente.objects.count(), Equipo.objects.count(), Solicitud.objects.count(),
-            Intervencion.objects.count(), MantenimientoProgramado.objects.count(),
-        )
+        conteos_antes = (Ambiente.objects.count(), Equipo.objects.count(), Solicitud.objects.count(), Intervencion.objects.count(), MantenimientoPreventivo.objects.count())
         call_command("seed_demo", verbosity=0)
-        conteos_despues = (
-            Ambiente.objects.count(), Equipo.objects.count(), Solicitud.objects.count(),
-            Intervencion.objects.count(), MantenimientoProgramado.objects.count(),
-        )
+        conteos_despues = (Ambiente.objects.count(), Equipo.objects.count(), Solicitud.objects.count(), Intervencion.objects.count(), MantenimientoPreventivo.objects.count())
         self.assertEqual(conteos_despues, conteos_antes)

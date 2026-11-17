@@ -1,0 +1,47 @@
+// Casos de uso por actor. Los docentes no tienen cuenta: informan al jefe de carrera.
+digraph casos_de_uso {
+  graph [rankdir=LR, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.12, ranksep=0.55, newrank=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de casos de uso</B></FONT>>];
+  node  [fontname="Arial", fontsize=10, shape=ellipse, style="filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.1, margin="0.05,0.02"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", dir=none];
+
+  node [shape=none, style="", image="actor.png", labelloc=b, imagepos=tc, fixedsize=false, width=1.1, height=1.05, fontsize=10.5, fontcolor="#064B87"];
+  admin [label="Administrador"];
+  resp [label="Responsable de\nmantenimiento"];
+  tec [label="Técnico"];
+  jefe [label="Jefe de carrera"];
+  est [label="Estudiante"];
+  docente [label="Docente\n(sin cuenta)", fontcolor="#687889"];
+
+  node [shape=ellipse, style="filled", image="", fixedsize=false, width=0, height=0, fontsize=10, fontcolor="black", labelloc=c];
+  subgraph cluster_sistema {
+    label=<<B>Sistema de Gestión de Mantenimiento</B>>; style="rounded,filled"; fillcolor="#F5F7FA"; color="#064B87"; fontcolor="#064B87";
+    cu01 [label="Iniciar sesión y\ncambiar contraseña", fillcolor="#FFFFFF"];
+    cu03 [label="Gestionar usuarios\ny asignar roles"];
+    cu04 [label="Gestionar roles\ny permisos"];
+    cu05 [label="Gestionar laboratorios"];
+    cu06 [label="Registrar y editar equipos"];
+    cu07 [label="Registrar periférico\n(teclado, mouse)"];
+    cu08 [label="Editar estados de equipo"];
+    cu09 [label="Consultar ficha e historial"];
+    cu10 [label="Asignar técnico\na un reporte"];
+    cu11 [label="Cargar cronograma\npreventivo anual"];
+    cu12 [label="Registrar baja e informe\na Vicerrectoría"];
+    cu13 [label="Generar y exportar\nreportes (Excel/PDF)"];
+    cu14 [label="Ver mis tareas"];
+    cu15 [label="Registrar salida\na reparación"];
+    cu16 [label="Registrar trabajo,\nrepuestos y devolución"];
+    cu17 [label="Marcar preventivo\nrealizado / pendiente"];
+    cu18 [label="Registrar reporte de falla\n(docente solicitante)"];
+    cu19 [label="Seguir y cancelar\nmis reportes"];
+    cu20 [label="Consultar estado\nde los equipos"];
+  }
+
+  docente -> jefe [style=dashed, label="le informa la falla", fontcolor="#687889"];
+  admin -> cu03; admin -> cu04; admin -> cu01;
+  resp -> cu05; resp -> cu06; resp -> cu07; resp -> cu08; resp -> cu09; resp -> cu10; resp -> cu11; resp -> cu12; resp -> cu13; resp -> cu17;
+  tec -> cu14; tec -> cu15; tec -> cu16; tec -> cu17;
+  jefe -> cu18; jefe -> cu19;
+  est -> cu20;
+  cu07 -> cu06 [style=dashed, dir=forward, arrowhead=vee, label="«extend»", constraint=false];
+}

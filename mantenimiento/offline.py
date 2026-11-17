@@ -9,11 +9,10 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.equipos.models import Equipo
+from apps.equipos.models import Equipo, EstadoEquipo
 from apps.intervenciones.forms import IntervencionForm
-from apps.intervenciones.models import Intervencion, RepuestoUsado
-from apps.preventivo.models import MantenimientoProgramado
-from apps.preventivo.services import completar_mantenimiento
+from apps.intervenciones.models import Intervencion
+from apps.preventivo.models import MantenimientoPreventivo
 from apps.solicitudes.forms import SolicitudForm
 from apps.solicitudes.models import HistorialSolicitud, Solicitud
 from apps.solicitudes.services import cambiar_estado
@@ -55,18 +54,18 @@ def catalogos_offline(request):
     }
 
     if request.user.has_perm("cuentas.ver_equipos"):
-        equipos = Equipo.objects.filter(estado__in=[Equipo.Estado.OPERATIVO, Equipo.Estado.EN_MANTENIMIENTO, Equipo.Estado.FUERA_DE_SERVICIO]).select_related("categoria", "ambiente")
+        equipos = Equipo.objects.exclude(estado__tipo=EstadoEquipo.Tipo.BAJA).select_related("categoria", "ambiente", "estado")
         payload["equipos"] = [{
             "id": item.pk,
             "codigo": item.codigo,
             "marca": item.marca,
             "modelo": item.modelo,
             "ambiente": item.ambiente.nombre if item.ambiente else None,
-            "estado": item.estado,
+            "estado": item.estado.nombre,
         } for item in equipos]
 
     if request.user.has_perm("cuentas.ver_ambientes"):
-        ambientes = Ambiente.objects.filter(activo=True).order_by("bloque", "nombre")
+        ambientes = Ambiente.laboratorios()
         payload["ambientes"] = [{
             "id": item.pk,
             "nombre": item.nombre,
@@ -80,6 +79,7 @@ def catalogos_offline(request):
             "id": item.pk,
             "equipo": item.equipo.codigo,
             "descripcion": item.descripcion,
+            "docente_solicitante": item.docente_solicitante,
             "estado": item.estado,
             "prioridad": item.prioridad,
             "fecha_reporte": item.fecha_reporte.isoformat(),
@@ -89,11 +89,13 @@ def catalogos_offline(request):
         payload["mis_tareas"] = tareas
 
     if request.user.has_perm("cuentas.ver_preventivos"):
-        pendientes = MantenimientoProgramado.objects.filter(estado=MantenimientoProgramado.Estado.PENDIENTE).select_related("equipo", "equipo__ambiente", "plan")
+        pendientes = MantenimientoPreventivo.objects.filter(estado=MantenimientoPreventivo.Estado.PENDIENTE).select_related("laboratorio")
+        if not (request.user.is_superuser or request.user.has_perm("cuentas.crear_preventivos")):
+            pendientes = pendientes.filter(tecnico=request.user)
         payload["preventivos_pendientes"] = [{
             "id": item.pk,
-            "equipo": item.equipo.codigo,
-            "plan": item.plan.nombre,
+            "laboratorio": item.laboratorio.nombre,
+            "mantenimiento": item.get_numero_display(),
             "fecha_programada": item.fecha_programada.isoformat(),
             "estado": item.estado,
         } for item in pendientes.order_by("fecha_programada")]
@@ -128,10 +130,11 @@ def sincronizar_offline(request):
             return _json_error("No tienes permisos para registrar solicitudes desde modo sin conexión.")
         existente = Solicitud.objects.filter(uuid_cliente=uuid_obj).first()
         if existente:
-            return JsonResponse({"estado": "duplicado", "id": existente.pk, "mensaje": "La solicitud ya estaba sincronizada."}, status=200)
+            return JsonResponse({"estado": "duplicado", "id": existente.pk, "mensaje": "El reporte de falla ya estaba sincronizado."}, status=200)
         try:
             form_data = {
                 "equipo": datos.get("equipo"),
+                "docente_solicitante": datos.get("docente_solicitante", ""),
                 "descripcion": datos.get("descripcion", ""),
                 "prioridad": datos.get("prioridad", Solicitud.Prioridad.MEDIA),
             }
@@ -143,7 +146,6 @@ def sincronizar_offline(request):
             with transaction.atomic():
                 solicitud = formulario.save(commit=False)
                 solicitud.solicitante = request.user
-                solicitud.tecnico_asignado_id = datos.get("tecnico_asignado")
                 solicitud.creado_por = request.user
                 solicitud.uuid_cliente = uuid_obj
                 solicitud.creado_sin_conexion = True
@@ -158,7 +160,7 @@ def sincronizar_offline(request):
                     usuario=request.user,
                     comentario="Registro sincronizado desde modo sin conexión.",
                 )
-            return JsonResponse({"estado": "ok", "id": solicitud.pk, "mensaje": "Solicitud sincronizada correctamente."}, status=200)
+            return JsonResponse({"estado": "ok", "id": solicitud.pk, "mensaje": "Reporte de falla sincronizado correctamente."}, status=200)
         except ValidationError as exc:
             mensaje = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
             return _json_error(mensaje)
@@ -176,17 +178,17 @@ def sincronizar_offline(request):
             solicitud = Solicitud.objects.select_for_update().get(pk=solicitud_id)
         except Solicitud.DoesNotExist:
             return _json_error("La solicitud indicada no existe.")
-        if solicitud.estado not in {Solicitud.Estado.ASIGNADA, Solicitud.Estado.EN_REPARACION}:
-            return _json_error("La solicitud no está disponible para registrar la intervención.")
+        if solicitud.estado != Solicitud.Estado.ASIGNADA:
+            return _json_error("El reporte no está disponible para registrar la reparación.")
         if solicitud.tecnico_asignado_id != request.user.pk:
             return _json_error("Solo el técnico asignado puede registrar esta intervención.")
         try:
             form_data = {
                 "diagnostico": datos.get("diagnostico", ""),
                 "trabajo_realizado": datos.get("trabajo_realizado", ""),
-                "fecha_inicio": datos.get("fecha_inicio") or timezone.now().isoformat(),
-                "fecha_fin": datos.get("fecha_fin") or "",
-                "costo_mano_obra": datos.get("costo_mano_obra", "0.00"),
+                "fecha_salida": datos.get("fecha_salida") or timezone.localdate().isoformat(),
+                "fecha_devolucion": datos.get("fecha_devolucion") or "",
+                "repuestos_usados": datos.get("repuestos_usados", ""),
                 "resultado": datos.get("resultado", ""),
                 "observaciones": datos.get("observaciones", ""),
             }
@@ -203,18 +205,12 @@ def sincronizar_offline(request):
                 intervencion.uuid_cliente = uuid_obj
                 intervencion.creado_sin_conexion = True
                 intervencion.fecha_cliente = fecha_registro
+                intervencion.laboratorio_origen = solicitud.equipo.ambiente
                 intervencion.full_clean()
                 intervencion.save()
-                for repuesto in datos.get("repuestos", []):
-                    RepuestoUsado.objects.create(
-                        intervencion=intervencion,
-                        descripcion=str(repuesto.get("descripcion", "")).strip(),
-                        cantidad=repuesto.get("cantidad", "0.01"),
-                        costo_unitario=repuesto.get("costo_unitario", "0.00"),
-                    )
                 if solicitud.estado == Solicitud.Estado.ASIGNADA:
                     solicitud = cambiar_estado(solicitud, Solicitud.Estado.EN_REPARACION, request.user, "Intervención iniciada desde modo sin conexión.")
-                if intervencion.fecha_fin:
+                if intervencion.fecha_devolucion:
                     solicitud = cambiar_estado(
                         solicitud,
                         Solicitud.Estado.RESUELTA,
@@ -231,23 +227,27 @@ def sincronizar_offline(request):
         if not request.user.has_perm("cuentas.editar_preventivos"):
             return _json_error("No tienes permisos para marcar preventivos realizados.")
         programacion_id = datos.get("programacion_id") or datos.get("mantenimiento_id")
-        if programacion_id:
-            programacion = MantenimientoProgramado.objects.filter(pk=programacion_id).select_for_update().first()
-        else:
-            programacion = MantenimientoProgramado.objects.filter(
-                equipo_id=datos.get("equipo"),
-                plan_id=datos.get("plan"),
-                fecha_programada=datos.get("fecha_programada"),
-            ).select_for_update().first()
-        if not programacion:
-            return _json_error("La programación preventiva no existe o ya no está pendiente.")
-        if programacion.estado == MantenimientoProgramado.Estado.REALIZADO:
-            return JsonResponse({"estado": "duplicado", "id": programacion.pk, "mensaje": "El mantenimiento preventivo ya estaba registrado como realizado."}, status=200)
-        try:
-            with transaction.atomic():
-                _, siguiente = completar_mantenimiento(programacion, request.user)
-            return JsonResponse({"estado": "ok", "id": programacion.pk, "mensaje": "Mantenimiento preventivo sincronizado correctamente."}, status=200)
-        except ValidationError as exc:
-            return _json_error(exc.messages[0] if getattr(exc, "messages", None) else str(exc))
+        with transaction.atomic():
+            programacion = MantenimientoPreventivo.objects.filter(pk=programacion_id).select_for_update().first() if programacion_id else None
+            if not programacion:
+                return _json_error("El mantenimiento preventivo no existe.")
+            if not (request.user.is_superuser or request.user.has_perm("cuentas.crear_preventivos")) and programacion.tecnico_id != request.user.pk:
+                return _json_error("Solo puedes marcar los mantenimientos que tienes asignados.")
+            if programacion.estado == MantenimientoPreventivo.Estado.REALIZADO:
+                return JsonResponse({"estado": "duplicado", "id": programacion.pk, "mensaje": "El mantenimiento preventivo ya estaba registrado como realizado."}, status=200)
+            fecha = datos.get("fecha_realizada") or timezone.localdate().isoformat()
+            try:
+                programacion.fecha_realizada = datetime.fromisoformat(str(fecha)).date()
+            except ValueError:
+                return _json_error("La fecha de realización no es válida.")
+            programacion.estado = MantenimientoPreventivo.Estado.REALIZADO
+            programacion.observaciones = str(datos.get("observaciones", programacion.observaciones))
+            programacion.actualizado_por = request.user
+            try:
+                programacion.full_clean()
+            except ValidationError as exc:
+                return _json_error(exc.messages[0])
+            programacion.save()
+        return JsonResponse({"estado": "ok", "id": programacion.pk, "mensaje": "Mantenimiento preventivo sincronizado correctamente."}, status=200)
 
     return _json_error("Tipo de operación no soportado.")

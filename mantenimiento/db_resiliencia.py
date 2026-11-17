@@ -14,6 +14,7 @@ from django.db import InterfaceError, OperationalError, connections
 logger = logging.getLogger(__name__)
 
 METODOS_SEGUROS = {"GET", "HEAD", "OPTIONS"}
+RUTAS_POST_REINTENTABLES = {"/cuentas/ingresar/"}
 ERRORES_TRANSITORIOS = (OperationalError, InterfaceError)
 
 
@@ -76,7 +77,10 @@ class ReintentoBaseDatosMiddleware:
         error = getattr(request, "_error_bd_transitorio", None)
         if response.status_code >= 500 and error is not None:
             _cerrar_conexiones()
-            if request.method in METODOS_SEGUROS:
+            puede_reintentar = request.method in METODOS_SEGUROS or (
+                request.method == "POST" and request.path_info in RUTAS_POST_REINTENTABLES
+            )
+            if puede_reintentar:
                 logger.warning("Error transitorio de base de datos en %s; reintentando: %s", request.path, error)
                 request._error_bd_transitorio = None
                 for attr in ("_cached_user", "user", "session"):

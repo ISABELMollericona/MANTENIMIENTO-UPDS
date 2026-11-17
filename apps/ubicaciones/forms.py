@@ -8,11 +8,11 @@ from .models import Ambiente
 class AmbienteForm(forms.ModelForm):
     class Meta:
         model = Ambiente
-        fields = ("nombre", "tipo", "bloque", "responsable")
-        labels = {"nombre": "Nombre del ambiente", "tipo": "Tipo", "bloque": "Bloque o edificio", "responsable": "Responsable"}
+        # Alcance: solo laboratorios de computación. El tipo queda fijo en "laboratorio".
+        fields = ("nombre", "bloque", "responsable")
+        labels = {"nombre": "Nombre del laboratorio", "bloque": "Bloque o edificio", "responsable": "Responsable"}
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
-            "tipo": forms.Select(attrs={"class": "form-select"}),
             "bloque": forms.TextInput(attrs={"class": "form-control"}),
             "responsable": forms.Select(attrs={"class": "form-select"}),
         }

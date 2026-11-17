@@ -1,0 +1,43 @@
+// Actividad: cargar el cronograma preventivo anual y marcar cada mantenimiento.
+digraph actividad_cronograma {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.3, ranksep=0.3, newrank=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Diagrama de actividad · cronograma preventivo</B></FONT>>];
+  node  [fontname="Arial", fontsize=10, shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#064B87", penwidth=1.1, margin="0.12,0.05"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", arrowsize=0.7];
+
+  subgraph cluster_resp { label=<<B>Responsable de mantenimiento</B>>; style="filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    inicio [label="", shape=circle, style=filled, fillcolor="#064B87", width=0.22, fixedsize=true];
+    abre [label="Abre Preventivo ›\nCargar cronograma"];
+    elige [label="Elige laboratorio y año"];
+    fechas [label="Indica 1.ª y 2.ª fecha\n(3.ª opcional) y técnico"];
+    valida [label="¿Fechas del año, en\norden y mínimo 2?", shape=diamond, style=filled, fillcolor="#FFFFFF", margin="0.02,0.02"];
+    errores [label="Muestra los errores\nbajo cada fecha"];
+    guarda [label="Guarda o actualiza los\nmantenimientos (Pendiente)", fillcolor="#E6EFF8"];
+  }
+  subgraph cluster_tec { label=<<B>Técnico asignado</B>>; style="filled"; fillcolor="#F5F7FA"; color="#9AB5CC"; fontcolor="#064B87";
+    ve [label="Ve el mantenimiento\nen Mis tareas"];
+    realiza [label="Realiza el mantenimiento\nen el laboratorio"];
+    marca [label="Marca realizado:\nfecha y observaciones"];
+    fvalida [label="¿Fecha ≤ hoy?", shape=diamond, style=filled, fillcolor="#FFFFFF", margin="0.02,0.02"];
+    realizado [label="Estado: Realizado", fillcolor="#E3F4EA"];
+    error2 [label="Error: la fecha\nno puede ser futura"];
+    corrige [label="¿Se marcó\npor error?", shape=diamond, style=filled, fillcolor="#FFFFFF", margin="0.02,0.02"];
+    pendiente [label="Volver a pendiente"];
+    fin [label="", shape=doublecircle, style=filled, fillcolor="#064B87", width=0.18, fixedsize=true];
+  }
+  vencido [label="Si pasa la fecha sin realizarse,\nel cronograma lo muestra Vencido", shape=note, style=filled, fillcolor="#FFF8E1", color="#E0A800"];
+
+  inicio -> abre -> elige -> fechas -> valida;
+  valida -> errores [label=" no"];
+  errores -> fechas;
+  valida -> guarda [label=" sí"];
+  guarda -> ve -> realiza -> marca -> fvalida;
+  fvalida -> error2 [label=" no"];
+  error2 -> marca;
+  fvalida -> realizado [label=" sí"];
+  realizado -> corrige;
+  corrige -> pendiente [label=" sí"];
+  pendiente -> ve;
+  corrige -> fin [label=" no"];
+  guarda -> vencido [style=dotted, arrowhead=none];
+}

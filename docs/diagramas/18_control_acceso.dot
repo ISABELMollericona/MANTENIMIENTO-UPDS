@@ -1,0 +1,55 @@
+// Cómo decide el sistema la respuesta a una petición (middleware → vista → servicio).
+digraph control_acceso {
+  graph [rankdir=TB, bgcolor="white", fontname="Arial", fontsize=12, pad=0.2, nodesep=0.35, ranksep=0.28, newrank=true, labelloc=t,
+         label=<<FONT POINT-SIZE="15" COLOR="#064B87"><B>Control de acceso a cada página</B></FONT>>];
+  node  [fontname="Arial", fontsize=10, shape=diamond, style="filled", fillcolor="#FFFFFF", color="#064B87", penwidth=1.1, margin="0.03,0.02"];
+  edge  [fontname="Arial", fontsize=9, color="#4B6378", fontcolor="#33475B", arrowsize=0.7];
+
+  peticion [label="Petición HTTP", shape=box, style="rounded,filled", fillcolor="#DCE9F5"];
+  https [label="¿HTTPS?\n(producción)"];
+  clave [label="¿Debe cambiar\nla contraseña?"];
+  ruta [label="¿Existe\nla ruta?"];
+  csrf [label="¿POST con\ntoken CSRF\nválido?"];
+  sesion [label="¿Página protegida\ny sin sesión?"];
+  permiso [label="¿El rol tiene el\npermiso de la vista?"];
+  propio [label="¿El registro le\ncorresponde?"];
+  reglas [label="¿Cumple las reglas\ndel servicio?"];
+
+  node [shape=box, style="rounded,filled", fontsize=9.5];
+  r301 [label="301 · redirige a https", fillcolor="#ECEFF2"];
+  r302c [label="302 · Cambiar contraseña", fillcolor="#FFF4D1"];
+  r404 [label="404 · Página no encontrada", fillcolor="#ECEFF2"];
+  r403c [label="403 · verificación CSRF", fillcolor="#FDE6EA"];
+  r302 [label="302 · /cuentas/ingresar/?next=…", fillcolor="#FFF4D1"];
+  r403 [label="403 · Acceso restringido", fillcolor="#FDE6EA"];
+  r404b [label="404 · no se revela\nque el registro existe", fillcolor="#ECEFF2"];
+  rval [label="403 o mensaje de error\n(p. ej., transición o fecha inválida)", fillcolor="#FDE6EA"];
+  r200 [label="200 / 302 · operación exitosa", fillcolor="#E3F4EA"];
+
+  peticion -> https;
+  https -> r301 [label=" no"];
+  https -> clave [label=" sí"];
+  clave -> r302c [label=" sí"];
+  clave -> ruta [label=" no"];
+  ruta -> r404 [label=" no"];
+  ruta -> csrf [label=" sí"];
+  csrf -> r403c [label=" no"];
+  csrf -> sesion [label=" sí / GET"];
+  sesion -> r302 [label=" sí"];
+  sesion -> permiso [label=" no"];
+  permiso -> r403 [label=" no"];
+  permiso -> propio [label=" sí"];
+  propio -> r404b [label=" no"];
+  propio -> reglas [label=" sí"];
+  reglas -> rval [label=" no"];
+  reglas -> r200 [label=" sí"];
+
+  { rank=same; https; r301; }
+  { rank=same; clave; r302c; }
+  { rank=same; ruta; r404; }
+  { rank=same; csrf; r403c; }
+  { rank=same; sesion; r302; }
+  { rank=same; permiso; r403; }
+  { rank=same; propio; r404b; }
+  { rank=same; reglas; rval; }
+}

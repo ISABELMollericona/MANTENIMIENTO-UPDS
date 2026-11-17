@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Página no encontrada | UPDS{% endblock %}
+{% block content %}
+<div class="content-narrow py-4">
+  <div class="panel-card">
+    <div class="panel-card-body empty-state">
+      <i class="bi bi-signpost-split" aria-hidden="true"></i>
+      <h1 class="h4 mt-2">Página no encontrada</h1>
+      <p class="mb-3">La dirección que abriste no existe o el registro no está disponible para tu cuenta.</p>
+      <a class="btn btn-primary" href="{% url 'panel' %}"><i class="bi bi-house me-2" aria-hidden="true"></i>Volver al inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

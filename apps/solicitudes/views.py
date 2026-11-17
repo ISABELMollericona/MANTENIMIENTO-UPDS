@@ -13,7 +13,7 @@ from apps.cuentas.models import Usuario
 
 from .forms import AsignarTecnicoForm, CambiarEstadoSolicitudForm, SolicitudForm
 from .models import Solicitud
-from .services import asignar_tecnico, cambiar_estado
+from .services import TRANSICIONES_PERMITIDAS, asignar_tecnico, cambiar_estado
 
 
 class AccesoSolicitudes(LoginRequiredMixin, PermissionRequiredMixin):
@@ -31,7 +31,7 @@ class ListaSolicitudesView(AccesoSolicitudes, ListView):
     permission_required = "cuentas.ver_solicitudes"
 
     def get_queryset(self):
-        queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "solicitante", "tecnico_asignado")
+        queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "equipo__equipo_principal", "solicitante", "tecnico_asignado")
         if not (self.request.user.is_superuser or self.request.user.has_perm("cuentas.ver_todas_solicitudes")):
             queryset = queryset.filter(Q(solicitante=self.request.user) | Q(tecnico_asignado=self.request.user))
         for campo in ("estado", "prioridad"):
@@ -57,7 +57,7 @@ class ListaSolicitudesView(AccesoSolicitudes, ListView):
                 pass
         consulta = self.request.GET.get("q", "").strip()
         if consulta:
-            queryset = queryset.filter(Q(equipo__codigo__icontains=consulta) | Q(descripcion__icontains=consulta) | Q(solicitante__username__icontains=consulta))
+            queryset = queryset.filter(Q(equipo__codigo__icontains=consulta) | Q(descripcion__icontains=consulta) | Q(docente_solicitante__icontains=consulta) | Q(solicitante__username__icontains=consulta))
         return queryset.order_by("-fecha_reporte", "-pk")
 
     def get_context_data(self, **kwargs):
@@ -67,7 +67,7 @@ class ListaSolicitudesView(AccesoSolicitudes, ListView):
         context.update({
             "estados": Solicitud.Estado.choices,
             "prioridades": Solicitud.Prioridad.choices,
-            "ambientes": Ambiente.objects.filter(activo=True).order_by("bloque", "nombre"),
+            "ambientes": Ambiente.laboratorios(),
             "tecnicos": Usuario.objects.filter(is_active=True, solicitudes_asignadas__isnull=False).distinct().order_by("last_name", "first_name"),
             "puede_filtrar_tecnico": self.request.user.has_perm("cuentas.asignar_tecnico"),
         })
@@ -88,7 +88,7 @@ class CrearSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     def form_valid(self, form):
         form.instance.solicitante = self.request.user
         form.instance.creado_por = self.request.user
-        messages.success(self.request, "La solicitud se registró correctamente.")
+        messages.success(self.request, "El reporte de falla se registró correctamente.")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -106,7 +106,7 @@ class DetalleSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         return self.request.user.is_authenticated
 
     def get_queryset(self):
-        queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "solicitante", "tecnico_asignado").prefetch_related("historial__usuario")
+        queryset = Solicitud.objects.select_related("equipo", "equipo__ambiente", "equipo__categoria", "equipo__equipo_principal", "solicitante", "tecnico_asignado").prefetch_related("historial__usuario")
         if not (self.request.user.is_superuser or self.request.user.has_perm("cuentas.ver_todas_solicitudes")):
             queryset = queryset.filter(Q(solicitante=self.request.user) | Q(tecnico_asignado=self.request.user))
         return queryset
@@ -118,9 +118,28 @@ class DetalleSolicitudView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         )
         context["puede_asignar"] = self.request.user.has_perm("cuentas.asignar_tecnico")
         context["asignacion_form"] = AsignarTecnicoForm()
-        context["estado_form"] = CambiarEstadoSolicitudForm()
+        # Solo se ofrecen los cambios que esta persona puede hacer desde el estado actual.
+        usuario = self.request.user
+        posibles = TRANSICIONES_PERMITIDAS.get(self.object.estado, set())
+        reparacion_abierta = self.object.intervenciones.filter(fecha_devolucion__isnull=True).exists()
+        opciones = []
+        for valor, etiqueta in Solicitud.Estado.choices:
+            if valor not in posibles or valor == Solicitud.Estado.ASIGNADA:
+                continue  # La asignación se hace con el botón «Asignar», que exige elegir técnico.
+            if valor == Solicitud.Estado.RESUELTA and reparacion_abierta:
+                continue  # Se resuelve al registrar la devolución en la reparación.
+            if valor == Solicitud.Estado.REGISTRADA and not usuario.has_perm("cuentas.reabrir_solicitud"):
+                continue
+            if not usuario.has_perm("cuentas.cambiar_estado_solicitud") and valor != Solicitud.Estado.CANCELADA:
+                continue
+            opciones.append((valor, "Reabrir (volver a registrada)" if valor == Solicitud.Estado.REGISTRADA else etiqueta))
+        estado_form = CambiarEstadoSolicitudForm()
+        estado_form.fields["estado"].choices = opciones
+        context["estado_form"] = estado_form
+        context["puede_cambiar_estado"] = context["puede_cambiar_estado"] and bool(opciones)
         if hasattr(self.object, "intervenciones"):
-            context["intervenciones"] = self.object.intervenciones.select_related("tecnico").prefetch_related("repuestos")
+            context["intervenciones"] = self.object.intervenciones.select_related("tecnico", "laboratorio_origen")
+            context["puede_editar_reparacion"] = self.request.user.has_perm("cuentas.editar_intervenciones")
         return context
 
 
@@ -142,7 +161,7 @@ class AsignarTecnicoView(LoginRequiredMixin, PermissionRequiredMixin, View):
         except ValidationError as error:
             messages.error(request, error.messages[0])
             return redirect("solicitudes:detalle", pk=pk)
-        messages.success(request, "El técnico quedó asignado a la solicitud.")
+        messages.success(request, "El técnico quedó asignado al reporte de falla.")
         return redirect("solicitudes:detalle", pk=pk)
 
 
@@ -165,5 +184,5 @@ class CambiarEstadoSolicitudView(LoginRequiredMixin, View):
         except ValidationError as error:
             messages.error(request, error.messages[0])
             return redirect("solicitudes:detalle", pk=pk)
-        messages.success(request, "El estado de la solicitud se actualizó correctamente.")
+        messages.success(request, "El estado del reporte de falla se actualizó correctamente.")
         return redirect("solicitudes:detalle", pk=pk)

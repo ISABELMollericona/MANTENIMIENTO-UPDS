@@ -1,13 +1,19 @@
 from django.contrib import admin
 
-from .models import CategoriaEquipo, Equipo, HistorialEquipo
+from .models import CategoriaEquipo, Equipo, EstadoEquipo, HistorialEquipo
 
 
 @admin.register(CategoriaEquipo)
 class CategoriaEquipoAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "activo", "creado_en")
-    list_filter = ("activo",)
+    list_display = ("nombre", "es_periferico", "activo", "creado_en")
+    list_filter = ("es_periferico", "activo")
     search_fields = ("nombre",)
+
+
+@admin.register(EstadoEquipo)
+class EstadoEquipoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "tipo", "orden", "activo")
+    list_filter = ("tipo", "activo")
 
 
 class HistorialEquipoInline(admin.TabularInline):
@@ -19,7 +25,7 @@ class HistorialEquipoInline(admin.TabularInline):
 
 @admin.register(Equipo)
 class EquipoAdmin(admin.ModelAdmin):
-    list_display = ("codigo", "categoria", "ambiente", "responsable", "estado")
-    list_filter = ("estado", "categoria", "ambiente")
+    list_display = ("codigo", "categoria", "ambiente", "equipo_principal", "estado", "informado_vicerrectoria")
+    list_filter = ("estado", "categoria", "ambiente", "informado_vicerrectoria")
     search_fields = ("codigo", "marca", "modelo", "numero_serie")
     inlines = [HistorialEquipoInline]

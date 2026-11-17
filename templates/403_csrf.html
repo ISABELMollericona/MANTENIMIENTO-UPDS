@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Formulario vencido | UPDS{% endblock %}
+{% block content %}
+<div class="content-narrow py-4">
+  <div class="panel-card">
+    <div class="panel-card-body empty-state">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+      <h1 class="h4 mt-2">El formulario venció</h1>
+      <p class="mb-3">Por seguridad, el sistema no aceptó el envío. Vuelve a abrir la página, completa el formulario e inténtalo de nuevo.</p>
+      <a class="btn btn-primary" href="/"><i class="bi bi-house me-2" aria-hidden="true"></i>Volver al inicio</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

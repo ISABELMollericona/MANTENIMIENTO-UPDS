@@ -24,33 +24,33 @@
     <h2 class="section-title"><i class="bi bi-pc-display" aria-hidden="true"></i>Equipos <span class="section-count">{{ total_equipos }} en total</span></h2>
     <div class="row g-3 mb-4">
       {% for item in equipos_por_estado %}
-        <div class="col-6 col-xl-3">
-          <div class="kpi-card kpi-{{ item.clave }}">
+        <div class="col-6 col-xl-4">
+          <a class="kpi-card kpi-{{ item.clave }} text-decoration-none" href="{% url 'equipos:lista' %}?estado={{ item.id }}">
             <span class="kpi-icon" aria-hidden="true">
-              {% if item.clave == "operativo" %}<i class="bi bi-check-circle"></i>{% elif item.clave == "en_mantenimiento" %}<i class="bi bi-tools"></i>{% elif item.clave == "fuera_de_servicio" %}<i class="bi bi-exclamation-octagon"></i>{% else %}<i class="bi bi-archive"></i>{% endif %}
+              {% if item.tipo == "operativo" %}<i class="bi bi-check-circle"></i>{% elif item.tipo == "reparacion" %}<i class="bi bi-tools"></i>{% else %}<i class="bi bi-archive"></i>{% endif %}
             </span>
             <div>
-              <span class="kpi-label">{{ item.estado }}</span>
+              <span class="kpi-label">{{ item.etiqueta }}</span>
               <strong class="kpi-value">{{ item.valor }}</strong>
             </div>
-          </div>
+          </a>
         </div>
       {% endfor %}
     </div>
 
     <h2 class="section-title"><i class="bi bi-clipboard-pulse" aria-hidden="true"></i>Mantenimiento</h2>
     <div class="row g-3 mb-4">
-      <div class="col-12 col-md-4">
-        <div class="kpi-card kpi-info">
+      <div class="col-12 col-md-6 col-xl-3">
+        <a class="kpi-card kpi-info text-decoration-none" href="{% url 'solicitudes:lista' %}?estado=registrada">
           <span class="kpi-icon" aria-hidden="true"><i class="bi bi-clipboard-check"></i></span>
           <div>
-            <span class="kpi-label">Solicitudes abiertas</span>
+            <span class="kpi-label">Reportes de falla abiertos</span>
             <strong class="kpi-value">{{ total_solicitudes_abiertas }}</strong>
-            <span class="kpi-detail">{% for item in solicitudes_por_prioridad %}{{ item.prioridad }}: {{ item.valor }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>
+            <span class="kpi-detail">{{ sin_asignar }} sin asignar a un técnico</span>
           </div>
-        </div>
+        </a>
       </div>
-      <div class="col-6 col-md-4">
+      <div class="col-6 col-md-6 col-xl-3">
         <div class="kpi-card {% if preventivos_vencidos %}kpi-fuera_de_servicio{% else %}kpi-operativo{% endif %}">
           <span class="kpi-icon" aria-hidden="true"><i class="bi bi-calendar-x"></i></span>
           <div>
@@ -59,7 +59,7 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-4">
+      <div class="col-6 col-md-6 col-xl-3">
         <div class="kpi-card kpi-info">
           <span class="kpi-icon" aria-hidden="true"><i class="bi bi-calendar2-week"></i></span>
           <div>
@@ -67,6 +67,15 @@
             <strong class="kpi-value">{{ preventivos_proximos|length }}</strong>
           </div>
         </div>
+      </div>
+      <div class="col-6 col-md-6 col-xl-3">
+        <a class="kpi-card {% if bajas_sin_informar %}kpi-en_mantenimiento{% else %}kpi-operativo{% endif %} text-decoration-none" href="{% url 'equipos:bajas' %}?informado=no">
+          <span class="kpi-icon" aria-hidden="true"><i class="bi bi-envelope-paper"></i></span>
+          <div>
+            <span class="kpi-label">Bajas sin informar a Vicerrectoría</span>
+            <strong class="kpi-value">{{ bajas_sin_informar }}</strong>
+          </div>
+        </a>
       </div>
     </div>
 
@@ -84,16 +93,16 @@
         <section class="panel-card h-100" aria-labelledby="upcoming-title">
           <header class="panel-card-header">
             <h2 id="upcoming-title"><i class="bi bi-calendar2-check" aria-hidden="true"></i>Próximos mantenimientos</h2>
-            {% if perms.cuentas.ver_preventivos %}<a href="{% url 'preventivo:programaciones' %}">Ver todos <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
+            {% if perms.cuentas.ver_preventivos %}<a href="{% url 'preventivo:cronograma' %}">Ver todos <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
           </header>
           <div class="table-responsive table-flush">
             <table class="table table-hover align-middle mb-0">
-              <thead><tr><th>Fecha</th><th>Equipo</th><th>Plan</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Laboratorio</th><th>Mantenimiento</th><th>Técnico</th></tr></thead>
               <tbody>
                 {% for item in preventivos_proximos %}
-                  <tr><td class="text-nowrap"><i class="bi bi-calendar3 text-secondary me-2" aria-hidden="true"></i>{{ item.fecha_programada|date:"d/m/Y" }}</td><td class="fw-semibold text-nowrap">{{ item.equipo.codigo }}</td><td>{{ item.plan.nombre }}</td></tr>
+                  <tr><td class="text-nowrap"><i class="bi bi-calendar3 text-secondary me-2" aria-hidden="true"></i>{{ item.fecha_programada|date:"d/m/Y" }}</td><td class="fw-semibold">{{ item.laboratorio.nombre }}</td><td>{{ item.get_numero_display }}</td><td>{{ item.tecnico|default:"Sin asignar" }}</td></tr>
                 {% empty %}
-                  <tr><td class="empty-state" colspan="3"><i class="bi bi-calendar-check" aria-hidden="true"></i>Sin próximos mantenimientos.</td></tr>
+                  <tr><td class="empty-state" colspan="4"><i class="bi bi-calendar-check" aria-hidden="true"></i>Sin próximos mantenimientos.</td></tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -103,12 +112,12 @@
       <div class="col-12">
         <section class="panel-card" aria-labelledby="latest-requests-title">
           <header class="panel-card-header">
-            <h2 id="latest-requests-title"><i class="bi bi-clock-history" aria-hidden="true"></i>Últimas solicitudes</h2>
+            <h2 id="latest-requests-title"><i class="bi bi-clock-history" aria-hidden="true"></i>Últimos reportes de falla</h2>
             {% if perms.cuentas.ver_solicitudes %}<a href="{% url 'solicitudes:lista' %}">Ver todas <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
           </header>
           <div class="table-responsive table-flush">
             <table class="table table-hover align-middle mb-0">
-              <thead><tr><th>Solicitud</th><th>Equipo</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
+              <thead><tr><th>Reporte</th><th>Equipo</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead>
               <tbody>
                 {% for solicitud in ultimas_solicitudes %}
                   <tr>
@@ -119,7 +128,7 @@
                     <td class="text-nowrap">{{ solicitud.fecha_reporte|date:"d/m/Y" }}</td>
                   </tr>
                 {% empty %}
-                  <tr><td colspan="5" class="empty-state"><i class="bi bi-inbox" aria-hidden="true"></i>No hay solicitudes registradas.</td></tr>
+                  <tr><td colspan="5" class="empty-state"><i class="bi bi-inbox" aria-hidden="true"></i>No hay reportes de falla registrados.</td></tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -128,7 +137,19 @@
       </div>
     </div>
   {% else %}
-    <div class="panel-card"><div class="panel-card-body empty-state"><i class="bi bi-lock" aria-hidden="true"></i>Tu cuenta no tiene permiso para ver los indicadores del panel.</div></div>
+    <h2 class="section-title"><i class="bi bi-lightning" aria-hidden="true"></i>¿Qué quieres hacer?</h2>
+    <div class="row g-3">
+      {% for url, icono, titulo, detalle in accesos %}
+        <div class="col-12 col-md-6 col-xl-4">
+          <a class="kpi-card kpi-info text-decoration-none" href="{% url url %}">
+            <span class="kpi-icon" aria-hidden="true"><i class="bi {{ icono }}"></i></span>
+            <div><span class="kpi-value fs-5">{{ titulo }}</span><span class="kpi-detail">{{ detalle }}</span></div>
+          </a>
+        </div>
+      {% empty %}
+        <div class="col-12"><div class="panel-card"><div class="panel-card-body empty-state"><i class="bi bi-lock" aria-hidden="true"></i>Tu cuenta todavía no tiene un rol asignado. Pide al administrador que te asigne uno.</div></div></div>
+      {% endfor %}
+    </div>
   {% endif %}
 {% else %}
   <section class="panel-card" aria-labelledby="access-title">
@@ -146,7 +167,6 @@
   const equipmentStateColors = {
     operativo: '#198754',
     en_mantenimiento: '#e0a800',
-    fuera_de_servicio: '#c8102e',
     dado_de_baja: '#6c757d'
   };
   Chart.defaults.font.family = '"DM Sans", "Segoe UI", sans-serif';
@@ -157,7 +177,7 @@
       labels: equipmentStateData.map((item) => item.estado),
       datasets: [{
         data: equipmentStateData.map((item) => item.valor),
-        backgroundColor: equipmentStateData.map((item) => equipmentStateColors[item.clave] || '#064b87'),
+        backgroundColor: equipmentStateData.map((item) => item.color || equipmentStateColors[item.clave] || '#064b87'),
         borderColor: '#ffffff',
         borderWidth: 3,
         hoverOffset: 6

@@ -10,24 +10,24 @@ PERMISOS_MODULO = [
         "acciones": [("ver_roles", "Ver"), ("crear_roles", "Crear"), ("editar_roles", "Editar"), ("eliminar_roles", "Eliminar")],
     },
     {
-        "titulo": "Ambientes",
+        "titulo": "Laboratorios",
         "acciones": [("ver_ambientes", "Ver"), ("crear_ambientes", "Crear"), ("editar_ambientes", "Editar"), ("dar_baja_ambientes", "Dar de baja")],
     },
     {
         "titulo": "Equipos",
-        "acciones": [("ver_equipos", "Ver"), ("crear_equipos", "Crear"), ("editar_equipos", "Editar"), ("dar_baja_equipos", "Dar de baja"), ("exportar_equipos", "Exportar")],
+        "acciones": [("ver_equipos", "Ver"), ("crear_equipos", "Crear"), ("editar_equipos", "Editar"), ("dar_baja_equipos", "Registrar baja"), ("exportar_equipos", "Exportar")],
     },
     {
-        "titulo": "Solicitudes",
+        "titulo": "Reportes de falla",
         "acciones": [("ver_solicitudes", "Ver"), ("crear_solicitudes", "Crear"), ("editar_solicitudes", "Editar"), ("cancelar_solicitudes", "Cancelar")],
     },
     {
-        "titulo": "Intervenciones",
+        "titulo": "Reparaciones",
         "acciones": [("ver_intervenciones", "Ver"), ("crear_intervenciones", "Crear"), ("editar_intervenciones", "Editar")],
     },
     {
         "titulo": "Mantenimiento preventivo",
-        "acciones": [("ver_preventivos", "Ver"), ("crear_preventivos", "Crear"), ("editar_preventivos", "Editar")],
+        "acciones": [("ver_preventivos", "Ver"), ("crear_preventivos", "Cargar cronograma"), ("editar_preventivos", "Marcar realizado")],
     },
     {
         "titulo": "Reportes",
@@ -39,11 +39,11 @@ PERMISOS_MODULO = [
 PERMISOS_ESPECIALES = [
     ("gestionar_usuarios", "Gestionar usuarios y asignar roles"),
     ("gestionar_roles", "Gestionar roles y permisos"),
-    ("asignar_tecnico", "Asignar técnicos a solicitudes"),
-    ("cambiar_estado_solicitud", "Cambiar el estado de solicitudes asignadas"),
-    ("reabrir_solicitud", "Reabrir solicitudes resueltas o canceladas"),
-    ("autorizar_baja_equipo", "Autorizar la baja de equipos"),
-    ("ver_todas_solicitudes", "Ver todas las solicitudes, no solo las propias"),
+    ("asignar_tecnico", "Asignar técnicos a reportes de falla"),
+    ("cambiar_estado_solicitud", "Cambiar el estado de los reportes de falla (el técnico, solo los suyos)"),
+    ("reabrir_solicitud", "Reabrir reportes de falla resueltos o cancelados"),
+    ("autorizar_baja_equipo", "Registrar bajas e informe a Vicerrectoría"),
+    ("ver_todas_solicitudes", "Ver todos los reportes de falla, no solo los propios"),
 ]
 
 TODOS_LOS_CODENAMES = [
